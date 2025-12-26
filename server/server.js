@@ -1,15 +1,22 @@
 const express = require("express");
-const cors = require("cors")
+const cors = require("cors");
 const dotenv = require("dotenv");
+const mongoose = require("mongoose");
+const authRoutes = require("./routes/auth");
+
 const app = express();
-dotenv.config()
+dotenv.config();
+
 app.use(express.json());
+app.use(cors());
 
-// Unprotected routes here
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/lifedoc")
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => console.error("Could not connect to MongoDB", err));
 
-app.use(cors())
-
-// Protected routes here
+// Routes
+app.use("/api/auth", authRoutes);
 
 const PORT = process.env.SERVER_PORT || 3001;
 

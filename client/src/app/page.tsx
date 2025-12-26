@@ -1,9 +1,8 @@
-import React from 'react'
+import SpeechRecognitionComponent from "./Components/SpeechInput";
 
-const page = () => {
+
+export default function Home() {
   return (
-    <div>page</div>
-  )
+    <div>This is the landing pagge</div>
+  );
 }
-
-export default page
