@@ -1,20 +1,35 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import SpeechRecognitionComponent from "./Components/SpeechInput";
-import { FiMic, FiPlus, FiArchive, FiShare2, FiClock, FiFileText } from 'react-icons/fi';
+import { FiMic, FiPlus, FiArchive, FiShare2, FiClock, FiFileText, FiLogOut, FiUser } from 'react-icons/fi';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { logoutUser } from '@/store/slices/authSlice';
 
 export default function Home() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { isAuthenticated, user, loading } = useAppSelector((state) => state.auth);
 
-  useEffect(() => {
-    // Check if user is logged in
-    const token = localStorage.getItem('token');
-    setIsLoggedIn(!!token);
-  }, []);
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
+    router.push('/login');
+  };
 
-  if (!isLoggedIn) {
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
         {/* Navigation */}
@@ -125,7 +140,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-8 py-6 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
@@ -133,7 +148,24 @@ export default function Home() {
             </div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">LifeDoc</h1>
           </div>
-          <Link href="/login" className="px-4 py-2 text-gray-600 hover:text-gray-900">Logout</Link>
+          <div className="flex items-center gap-6">
+            {user && (
+              <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 rounded-lg">
+                <FiUser className="text-gray-600" />
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-gray-900">{user.name}</p>
+                  <p className="text-xs text-gray-500">{user.email}</p>
+                </div>
+              </div>
+            )}
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+            >
+              <FiLogOut />
+              <span>Logout</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -141,7 +173,9 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-8 py-12">
         {/* Welcome Section */}
         <div className="mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 mb-2">Welcome back!</h2>
+          <h2 className="text-4xl font-bold text-gray-900 mb-2">
+            Welcome back, {user?.name || 'User'}! 👋
+          </h2>
           <p className="text-gray-600">Create and manage your health documents with ease</p>
         </div>
 

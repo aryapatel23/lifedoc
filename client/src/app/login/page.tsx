@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { encrypt } from '@/utils/cryptoUtils';
 import Link from 'next/link';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { loginUser, clearError } from '@/store/slices/authSlice';
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -12,9 +12,23 @@ export default function Login() {
     password: '',
     rememberMe: false
   });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { loading, error, isAuthenticated } = useAppSelector((state) => state.auth);
+
+  useEffect(() => {
+    // Redirect if already authenticated
+    if (isAuthenticated) {
+      router.push('/');
+    }
+  }, [isAuthenticated, router]);
+
+  useEffect(() => {
+    // Clear error when component unmounts
+    return () => {
+      dispatch(clearError());
+    };
+  }, [dispatch]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -26,30 +40,15 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    
+    const result = await dispatch(loginUser({
+      email: formData.email,
+      password: formData.password,
+      rememberMe: formData.rememberMe
+    }));
 
-    try {
-      const { rememberMe, ...dataToEncrypt } = formData;
-      const encryptedData = encrypt(dataToEncrypt);
-
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-        encryptedData
-      });
-
-      if (response.status === 200) {
-        const { token } = response.data;
-        if (formData.rememberMe) {
-          localStorage.setItem('token', token);
-        } else {
-          sessionStorage.setItem('token', token);
-        }
-        router.push('/');
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid credentials');
-    } finally {
-      setLoading(false);
+    if (loginUser.fulfilled.match(result)) {
+      router.push('/');
     }
   };
 

@@ -1,56 +1,50 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { encrypt } from '@/utils/cryptoUtils';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { verifyOTP, clearError } from '@/store/slices/authSlice';
 
 export default function VerifyOTP() {
   const [otp, setOtp] = useState('');
   const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { loading, error, isAuthenticated } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
-    const pendingEmail = sessionStorage.getItem('pendingEmail');
-    if (!pendingEmail) {
-      router.push('/signup');
-    } else {
-      setEmail(pendingEmail);
+    // Check if we're in browser environment
+    if (typeof window !== 'undefined') {
+      const pendingEmail = sessionStorage.getItem('pendingEmail');
+      if (!pendingEmail) {
+        router.push('/signup');
+      } else {
+        setEmail(pendingEmail);
+      }
     }
   }, [router]);
 
+  useEffect(() => {
+    // Redirect if authenticated
+    if (isAuthenticated) {
+      router.push('/');
+    }
+  }, [isAuthenticated, router]);
+
+  useEffect(() => {
+    // Clear error when component unmounts
+    return () => {
+      dispatch(clearError());
+    };
+  }, [dispatch]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
 
-    try {
-      const encryptedData = encrypt({ email, otp });
+    const result = await dispatch(verifyOTP({ email, otp }));
 
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/verify-otp`, {
-        encryptedData
-      });
-
-      if (response.status === 200) {
-        const { token } = response.data;
-        const rememberMe = JSON.parse(sessionStorage.getItem('rememberMe') || 'false');
-        
-        if (rememberMe) {
-          localStorage.setItem('token', token);
-        } else {
-          sessionStorage.setItem('token', token);
-        }
-
-        sessionStorage.removeItem('pendingEmail');
-        sessionStorage.removeItem('rememberMe');
-        router.push('/');
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid or expired OTP');
-    } finally {
-      setLoading(false);
+    if (verifyOTP.fulfilled.match(result)) {
+      router.push('/');
     }
   };
 

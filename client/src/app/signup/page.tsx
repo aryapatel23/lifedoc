@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { encrypt } from '@/utils/cryptoUtils';
 import Link from 'next/link';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { signupUser, clearError } from '@/store/slices/authSlice';
 
 export default function Signup() {
   const [formData, setFormData] = useState({
@@ -13,9 +13,23 @@ export default function Signup() {
     email: '',
     password: '',
   });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { loading, error, isAuthenticated } = useAppSelector((state) => state.auth);
+
+  useEffect(() => {
+    // Redirect if already authenticated
+    if (isAuthenticated) {
+      router.push('/');
+    }
+  }, [isAuthenticated, router]);
+
+  useEffect(() => {
+    // Clear error when component unmounts
+    return () => {
+      dispatch(clearError());
+    };
+  }, [dispatch]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -27,24 +41,16 @@ export default function Signup() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    
+    const result = await dispatch(signupUser({
+      name: formData.name,
+      age: formData.age,
+      email: formData.email,
+      password: formData.password
+    }));
 
-    try {
-      const encryptedData = encrypt(formData);
-
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/signup`, {
-        encryptedData
-      });
-
-      if (response.status === 201) {
-        sessionStorage.setItem('pendingEmail', formData.email);
-        router.push('/verify-otp');
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Something went wrong');
-    } finally {
-      setLoading(false);
+    if (signupUser.fulfilled.match(result)) {
+      router.push('/verify-otp');
     }
   };
 

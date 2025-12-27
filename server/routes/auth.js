@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { sendOTP } = require("../utils/mailer");
 const { decrypt } = require("../utils/cryptoUtils");
+const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -53,7 +54,16 @@ router.post("/verify-otp", async (req, res) => {
     await user.save();
 
     const token = jwt.sign({ id: user._id, type: user.type }, process.env.JWT_SECRET, { expiresIn: "1d" });
-    res.status(200).json({ message: "Verification successful", token });
+    
+    // Return user data along with token
+    const userData = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      age: user.age
+    };
+
+    res.status(200).json({ message: "Verification successful", token, user: userData });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -72,7 +82,16 @@ router.post("/login", async (req, res) => {
     if (!user.isVerified) return res.status(400).json({ message: "Please verify your email" });
 
     const token = jwt.sign({ id: user._id, type: user.type }, process.env.JWT_SECRET, { expiresIn: "1d" });
-    res.status(200).json({ message: "Login successful", token });
+    
+    // Return user data along with token
+    const userData = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      age: user.age
+    };
+
+    res.status(200).json({ message: "Login successful", token, user: userData });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -108,6 +127,27 @@ router.post("/reset-password", async (req, res) => {
 
     user.password = newPassword;
     user.otp = undefined;
+// Get user profile - protected route
+router.get("/profile", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password -otp -otpExpires');
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const userData = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      age: user.age
+    };
+
+    res.status(200).json({ user: userData });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
     user.otpExpires = undefined;
     await user.save();
 
