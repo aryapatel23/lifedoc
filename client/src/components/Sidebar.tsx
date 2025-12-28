@@ -48,7 +48,7 @@ const Sidebar = () => {
                                 }`}
                         >
                             <item.icon className={`text-xl ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-[#7A8E6B]'}`} />
-                            <span className>{item.name}</span>
+                            <span>{item.name}</span>
                         </Link>
                     );
                 })}
