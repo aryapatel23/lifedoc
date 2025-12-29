@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FaHome, FaHeartbeat, FaBookMedical, FaFileMedical, FaUserMd, FaSignOutAlt, FaMicrophone, FaCamera } from 'react-icons/fa';
+import { FaHome, FaHeartbeat, FaBookMedical, FaFileMedical, FaUserMd, FaSignOutAlt, FaMicrophone, FaCamera, FaUser } from 'react-icons/fa';
 import { useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { logoutUser } from '@/store/slices/authSlice';
@@ -56,8 +56,15 @@ const Sidebar = () => {
 
             <div className="p-4 border-t border-gray-100 space-y-2">
                 <div className="flex items-center justify-between px-4 py-2 bg-gray-50 rounded-lg">
-                    <span className="text-xs font-bold text-gray-500 uppercase">Accessibility</span>
+                    <span className="text-xs font-bold text-gray-500 uppercase">Settings & Accessibility</span>
                 </div>
+                <Link
+                    href="/profile"
+                    className="flex items-center space-x-3 px-4 py-2 w-full rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                >
+                    <FaUser className="text-xl" />
+                    <span className="font-medium">Profile</span>
+                </Link>
                 <button
                     onClick={() => document.body.classList.toggle('large-text')}
                     className="flex items-center space-x-3 px-4 py-2 w-full rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"

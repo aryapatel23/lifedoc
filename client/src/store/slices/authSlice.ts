@@ -8,6 +8,13 @@ interface User {
   name: string;
   email: string;
   age?: number;
+  profile?: {
+    gender?: string;
+    height?: number;
+    weight?: number;
+    bloodGroup?: string;
+    chronicConditions?: string[];
+  };
 }
 
 interface AuthState {
@@ -134,6 +141,37 @@ export const fetchUserProfile = createAsyncThunk(
   }
 );
 
+export const updateUserProfile = createAsyncThunk(
+  'auth/updateUserProfile',
+  async (
+    userData: {
+      name?: string;
+      age?: string;
+      gender?: string;
+      height?: number;
+      weight?: number;
+      bloodGroup?: string;
+      chronicConditions?: string[];
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      if (typeof window === 'undefined') throw new Error('Not in browser environment');
+
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (!token) throw new Error('No token found');
+
+      const response = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/auth/profile`, userData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      return { user: response.data.user };
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to update profile');
+    }
+  }
+);
+
 export const logoutUser = createAsyncThunk('auth/logout', async () => {
   // Clear tokens (only in browser)
   if (typeof window !== 'undefined') {
@@ -230,6 +268,22 @@ const authSlice = createSlice({
         state.token = null;
         state.isAuthenticated = false;
         state.isInitialized = true;
+      });
+
+    // Update User Profile
+    builder
+      .addCase(updateUserProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload.user;
+        state.error = null;
+      })
+      .addCase(updateUserProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
       });
 
     // Logout

@@ -149,10 +149,54 @@ router.get("/profile", authMiddleware, async (req, res) => {
       id: user._id,
       name: user.name,
       email: user.email,
-      age: user.age
+      age: user.age,
+      profile: user.profile || {}
     };
 
     res.status(200).json({ user: userData });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Update user profile - protected route
+router.put("/profile", authMiddleware, async (req, res) => {
+  try {
+    const { name, age, gender, height, weight, bloodGroup, chronicConditions } = req.body;
+
+    // Build update object
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (age) updateData.age = age;
+
+    // Handle nested profile fields using dot notation for specific updates
+    // or we can construct the object. Since we want to merge, let's look up the user first.
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (name) user.name = name;
+    if (age) user.age = age;
+
+    // Ensure profile object exists
+    if (!user.profile) user.profile = {};
+
+    if (gender) user.profile.gender = gender;
+    if (height) user.profile.height = height;
+    if (weight) user.profile.weight = weight;
+    if (bloodGroup) user.profile.bloodGroup = bloodGroup;
+    if (chronicConditions) user.profile.chronicConditions = chronicConditions;
+
+    await user.save();
+
+    const userData = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      age: user.age,
+      profile: user.profile
+    };
+
+    res.status(200).json({ message: "Profile updated successfully", user: userData });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
