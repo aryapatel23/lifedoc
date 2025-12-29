@@ -15,6 +15,7 @@ dotenv.config();
 const auth = require('../middleware/authMiddleware');
 const Consultation = require('../models/Consultation');
 const Prescription = require('../models/Prescription');
+const LabReport = require('../models/LabReport');
 
 // Middleware to check auth would go here
 // const auth = require('../middleware/auth'); 
@@ -198,6 +199,94 @@ router.post('/summerizer', auth, async (req, res) => {
     } catch (err) {
         console.error("Gemini AI Error:", err.message);
         res.status(500).json({ msg: 'Error processing AI request', error: err.message });
+    }
+});
+
+// POST /api/ai/analyze-lab-report
+// Desc: Analyze lab report image/PDF using Gemini
+router.post('/analyze-lab-report', auth, async (req, res) => {
+    try {
+        const { image } = req.body; // Base64 string
+
+        if (!image) {
+            return res.status(400).json({ msg: 'Please upload a lab report image' });
+        }
+
+        // Read the prompt
+        const promptPath = path.join(__dirname, '../prompts/labReportAnalyzer.txt');
+        if (!fs.existsSync(promptPath)) {
+            return res.status(500).json({ msg: 'System Error: Prompt file missing' });
+        }
+        const systemPrompt = fs.readFileSync(promptPath, 'utf8');
+
+        if (!process.env.GEMINI_API_KEY) {
+            return res.status(500).json({ msg: 'Server Configuration Error: API Key missing.' });
+        }
+
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+        // Prepare image part
+        let mimeType = "image/jpeg"; // Default
+        let base64Data = image;
+
+        if (image.includes("base64,")) {
+            const parts = image.split(";base64,");
+            mimeType = parts[0].split(":")[1];
+            base64Data = parts[1];
+        }
+
+        const imagePart = {
+            inlineData: {
+                data: base64Data,
+                mimeType: mimeType
+            }
+        };
+
+        const result = await model.generateContent({
+            contents: [
+                {
+                    role: "user",
+                    parts: [
+                        { text: systemPrompt },
+                        imagePart
+                    ]
+                }
+            ],
+            generationConfig: { responseMimeType: "application/json" }
+        });
+
+        const response = await result.response;
+        const textResponse = response.text();
+        const aiResult = JSON.parse(textResponse);
+
+        // Determine test type and date
+        const reportDate = aiResult.labReport?.reportDate ? new Date(aiResult.labReport.reportDate) : new Date();
+        let testType = "General Lab Report";
+        if (aiResult.tests && aiResult.tests.length > 0) {
+            testType = aiResult.tests[0].testCategory || aiResult.tests[0].testName || "General Lab Report";
+        }
+
+        const newLabReport = new LabReport({
+            userId: req.user.id,
+            reportDate: reportDate,
+            testType: testType,
+            parsedResults: aiResult,
+            fileUrl: image, // Storing base64 for now
+            notes: "Analyzed by AI"
+        });
+
+        await newLabReport.save();
+
+        res.json({
+            message: "Lab report analyzed successfully",
+            data: newLabReport,
+            aiAnalysis: aiResult
+        });
+
+    } catch (err) {
+        console.error("Lab Report Analysis Error:", err.message);
+        res.status(500).json({ msg: 'Error analyzing lab report', error: err.message });
     }
 });
 

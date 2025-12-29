@@ -16,12 +16,14 @@ export interface LabReport {
 
 interface LabReportsState {
     reports: LabReport[];
+    currentReport: LabReport | null;
     loading: boolean;
     error: string | null;
 }
 
 const initialState: LabReportsState = {
     reports: [],
+    currentReport: null,
     loading: false,
     error: null,
 };
@@ -60,6 +62,34 @@ export const createLabReport = createAsyncThunk(
     }
 );
 
+export const analyzeLabReport = createAsyncThunk(
+    'labReports/analyze',
+    async (image: string, { rejectWithValue }) => {
+        try {
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/ai/analyze-lab-report`, { image }, {
+                headers: getAuthHeader(),
+            });
+            return response.data;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to analyze lab report');
+        }
+    }
+);
+
+export const fetchLabReportById = createAsyncThunk(
+    'labReports/fetchById',
+    async (id: string, { rejectWithValue }) => {
+        try {
+            const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/lab-reports/${id}`, {
+                headers: getAuthHeader(),
+            });
+            return response.data.data;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to fetch lab report');
+        }
+    }
+);
+
 // Slice
 const labReportsSlice = createSlice({
     name: 'labReports',
@@ -94,6 +124,29 @@ const labReportsSlice = createSlice({
                 state.reports.unshift(action.payload);
             })
             .addCase(createLabReport.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+            .addCase(analyzeLabReport.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(analyzeLabReport.fulfilled, (state) => {
+                state.loading = false;
+            })
+            .addCase(analyzeLabReport.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+            .addCase(fetchLabReportById.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchLabReportById.fulfilled, (state, action) => {
+                state.loading = false;
+                state.currentReport = action.payload;
+            })
+            .addCase(fetchLabReportById.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
             });
