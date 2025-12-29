@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import axios from 'axios';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Sidebar from '@/components/Sidebar';
 import { useDispatch, useSelector } from 'react-redux';
@@ -36,17 +37,33 @@ export default function EditDiaryEntryPage() {
         }
     }, [currentEntry]);
 
-    // Simple "AI" simulation for summary generation
-    const generateSummary = () => {
+    // Generate AI Summary
+    const generateSummary = async () => {
+        if (!text) return;
         setIsGenerating(true);
-        // Simulate API delay
-        setTimeout(() => {
-            const generated = text.length > 50
-                ? `User reported feeling ${mood}. Key points: ${text.slice(0, 30)}...`
-                : text;
-            setSummary(generated);
+        try {
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            const response = await axios.post(
+                `${process.env.NEXT_PUBLIC_API_URL}/ai/summerizer?prompt=diarySummerizer`,
+                { text, date },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            const { summary: aiSummary, feeling } = response.data;
+            setSummary(aiSummary);
+
+            if (feeling) {
+                const moodLower = feeling.toLowerCase();
+                if (moods.some(m => m.id === moodLower)) {
+                    setMood(moodLower);
+                }
+            }
+        } catch (error) {
+            console.error("AI Error:", error);
+            alert("Failed to generate summary. Please try again.");
+        } finally {
             setIsGenerating(false);
-        }, 1000);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {

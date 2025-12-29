@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { OpenAI } = require('openai');
 const dotenv = require('dotenv');
+const fs = require('fs');
+const path = require('path');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 dotenv.config();
 
@@ -139,6 +142,62 @@ router.post('/analyze-prescription', auth, async (req, res) => {
     } catch (err) {
         console.error("Vision AI Error:", err.message);
         res.status(500).json({ msg: 'Error analyzing image', error: err.message });
+    }
+});
+
+// POST /api/ai/summerizer
+// Desc: Summarize diary entry using Gemini
+router.post('/summerizer', auth, async (req, res) => {
+    try {
+        const { prompt } = req.query; // e.g. "diarySummerizer"
+        const { text, date } = req.body;
+
+        if (!prompt) {
+            return res.status(400).json({ msg: 'Prompt query parameter is required' });
+        }
+
+        // Validate prompt file exists
+        const promptPath = path.join(__dirname, `../prompts/${prompt}.txt`);
+        if (!fs.existsSync(promptPath)) {
+            return res.status(404).json({ msg: 'Prompt file not found' });
+        }
+
+        const basePrompt = fs.readFileSync(promptPath, 'utf8');
+
+        if (!process.env.GEMINI_API_KEY) {
+            console.error("Server Error: GEMINI_API_KEY is missing.");
+            return res.status(500).json({ msg: 'Server Configuration Error: API Key missing.' });
+        }
+
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        // Using gemini-flash-latest which was verified to work
+        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+
+        const fullPrompt = `${basePrompt}\n\nUser Diary Entry (${date || 'Today'}):\n${text}\n\nOutput JSON:`;
+
+        const result = await model.generateContent({
+            contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
+            generationConfig: { responseMimeType: "application/json" } // Force JSON
+        });
+
+        const response = await result.response;
+        const textResponse = response.text();
+
+        // Parse JSON safely
+        let aiResult;
+        try {
+            aiResult = JSON.parse(textResponse);
+        } catch (e) {
+            // Fallback cleanup if not pure JSON
+            const cleanText = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+            aiResult = JSON.parse(cleanText);
+        }
+
+        res.json(aiResult);
+
+    } catch (err) {
+        console.error("Gemini AI Error:", err.message);
+        res.status(500).json({ msg: 'Error processing AI request', error: err.message });
     }
 });
 
