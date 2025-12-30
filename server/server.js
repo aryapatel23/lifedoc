@@ -9,9 +9,15 @@ const labReportRoutes = require("./routes/labReports");
 const doctorReportRoutes = require("./routes/doctorReports");
 const aiRoutes = require("./routes/ai");
 const newsRoutes = require("./routes/news");
+const { startCronJob } = require("./jobs/newsFetcher");
 
 const app = express();
 dotenv.config();
+
+// Start background jobs
+if (process.env.NODE_ENV !== 'test') {
+  startCronJob();
+}
 
 // Increase payload limit to 50mb
 app.use(express.json({ limit: '50mb' }));
