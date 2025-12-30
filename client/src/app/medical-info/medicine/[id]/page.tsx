@@ -81,64 +81,65 @@ const MedicineDetailsPage = () => {
                     <FaArrowLeft className="mr-2" /> Back
                 </button>
 
-                <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-8 border-b border-gray-100">
+                <div className="bg-white rounded-3xl">
+                    <div className="p-8">
                         <div className="flex items-start justify-between">
                             <div>
-                                <span className="inline-block px-3 py-1 bg-white/60 text-blue-600 rounded-lg text-sm font-bold mb-3 border border-blue-100">
+                                <span className="inline-block px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-bold mb-3">
                                     {medicine.category}
                                 </span>
-                                <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2">
+                                <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">
                                     {medicine.name}
                                 </h1>
-                                <p className="text-gray-600 text-lg leading-relaxed max-w-2xl">
+                                <p className="text-gray-700 text-lg leading-relaxed max-w-4xl">
                                     {medicine.description}
                                 </p>
-                            </div>
-                            <div className="bg-white p-4 rounded-2xl shadow-sm text-blue-500 hidden md:block">
-                                <FaPills className="text-4xl" />
                             </div>
                         </div>
                     </div>
 
-                    <div className="p-8 grid gap-8 md:grid-cols-2">
+                    <div className="p-8 grid gap-10 md:grid-cols-2">
                         {/* Uses */}
                         <div className="space-y-4">
-                            <h3 className="text-xl font-bold text-gray-800 flex items-center">
-                                <FaNotesMedical className="mr-2 text-green-500" />
+                            <h3 className="text-xl font-bold text-gray-900 flex items-center">
+                                <FaNotesMedical className="mr-3 text-[#3AAFA9]" />
                                 Indications & Usage
                             </h3>
-                            <div className="bg-gray-50 p-4 rounded-xl text-gray-700 text-sm leading-relaxed max-h-60 overflow-y-auto">
-                                {medicine.uses.map((use, i) => (
-                                    <p key={i} className="mb-2">{use}</p>
-                                ))}
+                            <div className="text-gray-700 text-lg leading-relaxed">
+                                <ul className="list-disc pl-5 space-y-2">
+                                    {medicine.uses.map((use, i) => (
+                                        <li key={i}>{use}</li>
+                                    ))}
+                                </ul>
                             </div>
                         </div>
 
                         {/* Side Effects */}
                         <div className="space-y-4">
-                            <h3 className="text-xl font-bold text-gray-800 flex items-center">
-                                <FaExclamationTriangle className="mr-2 text-orange-500" />
+                            <h3 className="text-xl font-bold text-gray-900 flex items-center">
+                                <FaExclamationTriangle className="mr-3 text-[#3AAFA9]" />
                                 Adverse Reactions
                             </h3>
-                            <div className="bg-orange-50/50 p-4 rounded-xl text-gray-700 text-sm leading-relaxed max-h-60 overflow-y-auto">
-                                {medicine.sideEffects.map((effect, i) => (
-                                    <p key={i} className="mb-2">{effect}</p>
-                                ))}
+                            <div className="text-gray-700 text-lg leading-relaxed">
+                                <ul className="list-disc pl-5 space-y-2">
+                                    {medicine.sideEffects.map((effect, i) => (
+                                        <li key={i}>{effect}</li>
+                                    ))}
+                                </ul>
                             </div>
                         </div>
 
                         {/* Dosage Info */}
                         <div className="md:col-span-2 mt-4">
-                            <div className="bg-[#3AAFA9]/5 border border-[#3AAFA9]/20 rounded-2xl p-6">
-                                <h3 className="text-xl font-bold text-[#2B7A78] flex items-center mb-3">
-                                    <FaPrescriptionBottle className="mr-2" />
+                            <div className="space-y-4">
+                                <h3 className="text-xl font-bold text-gray-900 flex items-center">
+                                    <FaPrescriptionBottle className="mr-3 text-[#3AAFA9]" />
                                     Dosage & Administration
                                 </h3>
-                                <p className="text-gray-800 leading-relaxed font-medium text-sm">
+                                <p className="text-gray-700 leading-relaxed font-medium text-lg">
                                     {medicine.dosageInfo}
                                 </p>
-                                <p className="text-xs text-gray-500 mt-4 italic">
+                                <p className="text-sm text-gray-500 mt-4 italic">
                                     * Always consult your physician before taking any medication.
                                 </p>
                             </div>

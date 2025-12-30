@@ -15,6 +15,7 @@ interface LabTest {
     preparation: string;
     clinicalSignificance: string;
     category: string;
+    source?: string;
 }
 
 const TestDetailsPage = () => {
@@ -80,64 +81,60 @@ const TestDetailsPage = () => {
                     <FaArrowLeft className="mr-2" /> Back
                 </button>
 
-                <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
-                    <div className="bg-[#3AAFA9]/10 p-8 border-b border-[#3AAFA9]/20">
-                        <div className="flex items-center space-x-4 mb-4">
-                            <div className="p-3 bg-white rounded-xl shadow-sm text-2xl text-[#3AAFA9]">
-                                <FaMicroscope />
-                            </div>
-                            <span className="px-3 py-1 bg-white/60 text-[#2B7A78] text-sm font-semibold rounded-full border border-[#3AAFA9]/20">
+                <div className="bg-white rounded-3xl">
+                    {/* Header Section */}
+                    <div className="p-8">
+                        <div className="flex items-center gap-3 mb-4">
+                            <span className="px-3 py-1 bg-gray-100 text-gray-600 text-sm font-semibold rounded-full">
                                 {test.category}
                             </span>
                             {test.source === 'MedlinePlus' && (
-                                <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full border border-blue-200">
-                                    MedlinePlus API
+                                <span className="px-3 py-1 bg-blue-50 text-blue-600 text-sm font-semibold rounded-full">
+                                    MedlinePlus
                                 </span>
                             )}
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">{test.name}</h1>
+                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">{test.name}</h1>
 
-                        {/* Description (Handle HTML if from API) */}
-                        <div className="text-gray-700 text-lg leading-relaxed max-w-4xl">
-                            <div dangerouslySetInnerHTML={{ __html: test.description }} className="prose prose-sm md:prose-base text-gray-700" />
+                        <div className="prose prose-lg max-w-none text-gray-700">
+                            <div dangerouslySetInnerHTML={{ __html: test.description }} />
                         </div>
                     </div>
 
-                    <div className="p-8 grid md:grid-cols-2 gap-8">
-                        {/* Clinical Significance / Summary */}
-                        <div className="md:col-span-2 space-y-4">
-                            <h3 className="text-xl font-bold text-gray-800 flex items-center">
-                                <FaNotesMedical className="mr-2 text-green-500" />
-                                Clinical Summary
+                    {/* Details Grid */}
+                    <div className="p-8 grid md:grid-cols-2 gap-10">
+                        {/* Clinical Significance */}
+                        <div className="md:col-span-2">
+                            <h3 className="text-xl font-bold text-gray-900 flex items-center mb-4">
+                                <FaNotesMedical className="mr-3 text-[#3AAFA9]" />
+                                Clinical Significance
                             </h3>
-                            <div className="bg-green-50/50 p-6 rounded-2xl border border-green-100">
-                                <p className="text-gray-700 leading-relaxed font-medium">
-                                    {test.clinicalSignificance}
-                                </p>
+                            <div className="text-gray-700 leading-relaxed text-lg">
+                                {test.clinicalSignificance}
                             </div>
                         </div>
 
-                        {/* Normal Range (Usually N/A for API) */}
-                        <div className="space-y-4">
-                            <h3 className="text-xl font-bold text-gray-800 flex items-center">
-                                <FaFlask className="mr-2 text-[#3AAFA9]" />
-                                Normal Range / Values
+                        {/* Normal Range */}
+                        <div>
+                            <h3 className="text-xl font-bold text-gray-900 flex items-center mb-4">
+                                <FaFlask className="mr-3 text-[#3AAFA9]" />
+                                Normal Range
                             </h3>
-                            <div className="bg-[#3AAFA9]/5 p-6 rounded-2xl border border-[#3AAFA9]/20 h-full">
-                                <p className="text-gray-700 font-medium">
+                            <div className="mt-4">
+                                <p className="text-gray-800 font-medium text-lg">
                                     {test.normalRange || 'Reference ranges vary by laboratory. Consult your doctor.'}
                                 </p>
                             </div>
                         </div>
 
                         {/* Preparation */}
-                        <div className="space-y-4">
-                            <h3 className="text-xl font-bold text-gray-800 flex items-center">
-                                <FaClipboardList className="mr-2 text-orange-500" />
+                        <div>
+                            <h3 className="text-xl font-bold text-gray-900 flex items-center mb-4">
+                                <FaClipboardList className="mr-3 text-[#3AAFA9]" />
                                 Preparation
                             </h3>
-                            <div className="bg-orange-50 p-6 rounded-2xl border border-orange-100 h-full">
-                                <p className="text-gray-700 font-medium">
+                            <div className="mt-4">
+                                <p className="text-gray-800 font-medium text-lg">
                                     {test.preparation || 'Follow specific instructions provided by your healthcare provider.'}
                                 </p>
                             </div>
