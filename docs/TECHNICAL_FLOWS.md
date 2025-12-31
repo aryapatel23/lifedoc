@@ -10,20 +10,18 @@ graph TD
     Client[Next.js Client]
     Server[Express Server]
     DB[(MongoDB)]
-    AI_Services[AI Services]
-    Cloud_Storage[Cloudinary]
+    
+    subgraph External [External AI & Cloud]
+        AI_Services[Google Gemini / OpenAI]
+        Cloud_Storage[Cloudinary]
+    end
 
     User -->|Interacts| Client
-    Client -->|API Requests (JSON)| Server
+    Client -->|API Requests| Server
     Server -->|Auth & Validation| Server
     Server -->|Read/Write Data| DB
-    Server -->|Analyze Symptoms/Reports| AI_Services
+    Server -->|Analyze Symptoms| AI_Services
     Server -->|Upload Images| Cloud_Storage
-    
-    subgraph External_Services
-        AI_Services
-        Cloud_Storage
-    end
 ```
 
 ## 2. Authentication Flow
@@ -87,13 +85,19 @@ graph LR
     Admin[Family Admin] -->|Add/Invite| Member[Family Member]
     Admin -->|View Health| Dashboard[Family Dashboard]
     
-    Member -->|Data Sources| Vitals
-    Member -->|Data Sources| LabReports
-    Member -->|Data Sources| Prescriptions
+    subgraph Sources [Health Data Sources]
+        Vitals[Measurements]
+        LabReports[Lab Results]
+        Prescriptions[Meds]
+    end
     
-    Aggregator -->|Context Context| SystemPrompt
-    SystemPrompt -->|Analyze| Gemini[Gemini AI]
-    Gemini -->|Risk Assessment| Dashboard
+    Member --> Vitals
+    Member --> LabReports
+    Member --> Prescriptions
+    
+    Vitals & LabReports & Prescriptions --> Aggregator[Data Aggregator]
+    Aggregator -->|Inject User Context| Gemini[Gemini 1.5 Flash]
+    Gemini -->|Risk Assessment JSON| Dashboard
 ```
 
 ## 5. Prescription Processing Pipeline (Sequence Diagram)
