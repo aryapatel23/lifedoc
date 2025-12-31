@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import axios from 'axios';
-import { FaBookmark, FaRegBookmark } from 'react-icons/fa';
+import { FaBookmark, FaRegBookmark, FaImage } from 'react-icons/fa';
 
 interface Article {
     _id: string;
@@ -13,6 +13,29 @@ interface Article {
     source: string;
     publishedAt: string;
 }
+
+const ArticleImage = ({ src, alt }: { src?: string, alt: string }) => {
+    const [hasError, setHasError] = useState(false);
+
+    if (!src || hasError) {
+        return (
+            <div className="h-48 bg-gray-200 flex items-center justify-center">
+                <FaImage className="text-4xl text-gray-400" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="h-48 overflow-hidden">
+            <img
+                src={src}
+                alt={alt}
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                onError={() => setHasError(true)}
+            />
+        </div>
+    );
+};
 
 const InsightsPage = () => {
     const [articles, setArticles] = useState<Article[]>([]);
@@ -99,16 +122,7 @@ const InsightsPage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {articles.map((article) => (
                             <div key={article._id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
-                                {article.imageUrl && (
-                                    <div className="h-48 overflow-hidden">
-                                        <img
-                                            src={article.imageUrl}
-                                            alt={article.title}
-                                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                                        />
-                                    </div>
-                                )}
+                                <ArticleImage src={article.imageUrl} alt={article.title} />
                                 <div className="p-5 flex-1 flex flex-col">
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="flex items-center space-x-2">
