@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import Sidebar from '@/components/Sidebar';
+import DashboardLayout from '@/components/DashboardLayout';
 import axios from 'axios';
 import { FaBookmark, FaRegBookmark, FaImage } from 'react-icons/fa';
 
@@ -104,9 +104,8 @@ const InsightsPage = () => {
     };
 
     return (
-        <div className="flex min-h-screen bg-gray-50">
-            <Sidebar />
-            <div className="flex-1 ml-0 md:ml-72 p-8 transition-all duration-300">
+        <DashboardLayout>
+            <div className="max-w-7xl mx-auto">
                 <header className="mb-8">
                     <h1 className="text-3xl font-bold text-gray-900">Health Insights</h1>
                     <p className="text-gray-600 mt-2">Latest news and articles to keep you informed.</p>
@@ -161,7 +160,7 @@ const InsightsPage = () => {
                     </div>
                 )}
             </div>
-        </div>
+        </DashboardLayout>
     );
 };
 

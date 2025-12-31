@@ -22,14 +22,14 @@ export default function DoctorReportsPage() {
     return (
         <ProtectedRoute>
             <DashboardLayout>
-                <header className="flex justify-between items-center mb-8">
+                <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-800">Doctor Visits</h1>
                         <p className="text-gray-500 mt-1">Keep track of your appointments and prescriptions.</p>
                     </div>
                     <Link
                         href="/doctor-reports/new"
-                        className="btn-primary space-x-2"
+                        className="btn-primary space-x-2 w-full md:w-auto flex justify-center"
                     >
                         <FaPlus />
                         <span>Record Visit</span>

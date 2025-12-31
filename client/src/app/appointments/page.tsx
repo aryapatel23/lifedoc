@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import Sidebar from '@/components/Sidebar';
+import DashboardLayout from '@/components/DashboardLayout';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
@@ -96,17 +96,16 @@ const AppointmentsPage = () => {
     };
 
     return (
-        <div className="flex min-h-screen bg-gray-50">
-            <Sidebar />
-            <div className="flex-1 ml-0 md:ml-72 p-8 transition-all duration-300">
-                <header className="mb-8 flex justify-between items-center">
+        <DashboardLayout>
+            <div className="max-w-7xl mx-auto">
+                <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900">Appointments</h1>
                         <p className="text-gray-600 mt-2">Manage your doctor visits and lab tests.</p>
                     </div>
                     <button
                         onClick={() => setShowModal(true)}
-                        className="bg-[#3AAFA9] text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-[#2B7A78] transition-colors flex items-center space-x-2"
+                        className="w-full md:w-auto bg-[#3AAFA9] text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-[#2B7A78] transition-colors flex items-center justify-center space-x-2"
                     >
                         <FaPlus /> <span>Book Appointment</span>
                     </button>
@@ -272,7 +271,7 @@ const AppointmentsPage = () => {
                     </div>
                 )}
             </div>
-        </div >
+        </DashboardLayout >
     );
 };
 

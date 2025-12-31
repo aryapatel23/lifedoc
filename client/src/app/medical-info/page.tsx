@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import Sidebar from '@/components/Sidebar';
+import DashboardLayout from '@/components/DashboardLayout';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
@@ -80,39 +80,40 @@ const MedicalInfoPage = () => {
     const displayItems = searchQuery.length > 1 ? searchResults : items;
 
     return (
-        <div className="flex min-h-screen bg-gray-50">
-            <Sidebar />
-            <div className="flex-1 ml-0 md:ml-72 p-8 transition-all duration-300">
+        <DashboardLayout>
+            <div className="max-w-7xl mx-auto">
                 <header className="mb-8">
-                    <h1 className="text-3xl font-extrabold text-gray-900 flex items-center">
+                    <h1 className="text-3xl font-extrabold text-gray-900 flex items-center mb-2">
                         <FaBookMedical className="mr-3 text-[#3AAFA9]" />
                         Medical Encyclopedia
                     </h1>
-                    <p className="text-gray-600 mt-2">
+                    <p className="text-gray-600">
                         Trusted information about medicines and lab tests.
                     </p>
                 </header>
 
                 {/* Tabs */}
-                <div className="flex space-x-6 border-b border-gray-200 mb-8">
-                    <button
-                        onClick={() => setActiveTab('medicine')}
-                        className={`pb-4 px-2 font-bold text-lg transition-colors border-b-2 ${activeTab === 'medicine'
-                            ? 'border-[#3AAFA9] text-[#3AAFA9]'
-                            : 'border-transparent text-gray-400 hover:text-gray-600'
-                            }`}
-                    >
-                        <FaPills className="inline mr-2 mb-1" /> Medicines
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('test')}
-                        className={`pb-4 px-2 font-bold text-lg transition-colors border-b-2 ${activeTab === 'test'
-                            ? 'border-[#3AAFA9] text-[#3AAFA9]'
-                            : 'border-transparent text-gray-400 hover:text-gray-600'
-                            }`}
-                    >
-                        <FaVial className="inline mr-2 mb-1" /> Lab Tests
-                    </button>
+                <div className="flex flex-col sm:flex-row sm:space-x-6 border-b border-gray-200 mb-8 gap-4 sm:gap-0">
+                    <div className="flex space-x-6">
+                        <button
+                            onClick={() => setActiveTab('medicine')}
+                            className={`pb-4 px-2 font-bold text-lg transition-colors border-b-2 ${activeTab === 'medicine'
+                                ? 'border-[#3AAFA9] text-[#3AAFA9]'
+                                : 'border-transparent text-gray-400 hover:text-gray-600'
+                                }`}
+                        >
+                            <FaPills className="inline mr-2 mb-1" /> Medicines
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('test')}
+                            className={`pb-4 px-2 font-bold text-lg transition-colors border-b-2 ${activeTab === 'test'
+                                ? 'border-[#3AAFA9] text-[#3AAFA9]'
+                                : 'border-transparent text-gray-400 hover:text-gray-600'
+                                }`}
+                        >
+                            <FaVial className="inline mr-2 mb-1" /> Lab Tests
+                        </button>
+                    </div>
                 </div>
 
                 {/* Search */}
@@ -172,7 +173,7 @@ const MedicalInfoPage = () => {
                     </div>
                 )}
             </div>
-        </div>
+        </DashboardLayout>
     );
 };
 
