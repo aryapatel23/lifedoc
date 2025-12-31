@@ -6,7 +6,9 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import { updateUserProfile, uploadProfilePhoto, fetchUserProfile } from '@/store/slices/authSlice';
-import { FaUser, FaEnvelope, FaBirthdayCake, FaIdCard, FaEdit, FaTimes, FaSave, FaCamera, FaStethoscope, FaCheck, FaChevronRight } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaBirthdayCake, FaIdCard, FaEdit, FaTimes, FaSave, FaCamera, FaStethoscope, FaCheck, FaChevronRight, FaBookmark, FaShareAlt } from 'react-icons/fa';
+import axios from 'axios';
+import Link from 'next/link';
 
 export default function Profile() {
     const dispatch = useDispatch<AppDispatch>();
@@ -35,6 +37,45 @@ export default function Profile() {
     const [additionalDetails, setAdditionalDetails] = useState('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+
+    // Saved Posts State
+    const [savedPosts, setSavedPosts] = useState<any[]>([]);
+    const [loadingSaved, setLoadingSaved] = useState(false);
+    const [copySuccess, setCopySuccess] = useState(false);
+
+    const handleShareProfile = () => {
+        if (!user) return;
+        // Use _id or id depending on what's available
+        const userId = (user as any)._id || user.id;
+        if (!userId) return;
+
+        const shareUrl = `${window.location.origin}/share/${userId}`;
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            setCopySuccess(true);
+            setTimeout(() => setCopySuccess(false), 2000);
+        });
+    };
+
+    useEffect(() => {
+        const fetchSavedPosts = async () => {
+            if (token) {
+                setLoadingSaved(true);
+                try {
+                    const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/saved-posts`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    if (res.data.success) {
+                        setSavedPosts(res.data.data);
+                    }
+                } catch (error) {
+                    console.error("Error fetching saved posts", error);
+                } finally {
+                    setLoadingSaved(false);
+                }
+            }
+        };
+        fetchSavedPosts();
+    }, [token]);
 
     const commonDiseases = ["Diabetes", "Hypertension", "Asthma", "Arthritis", "Heart Disease", "Thyroid", "None of these"];
 
@@ -324,6 +365,13 @@ export default function Profile() {
                                             Explain Yourself
                                         </button>
                                         <button
+                                            onClick={handleShareProfile}
+                                            className="text-[#7A8E6B] hover:text-[#6a7d5d] transition-colors flex items-center gap-1 text-sm font-semibold bg-[#7A8E6B]/10 px-3 py-1.5 rounded-lg"
+                                        >
+                                            {copySuccess ? <FaCheck /> : <FaShareAlt />}
+                                            {copySuccess ? 'Copied!' : 'Share'}
+                                        </button>
+                                        <button
                                             onClick={() => setEditSection('health')}
                                             className="text-gray-400 hover:text-[#7A8E6B] transition-colors"
                                         >
@@ -390,6 +438,55 @@ export default function Profile() {
                                 </div>
                             </div>
                         )}
+
+                        {/* Saved Posts Section */}
+                        <div className="mt-6 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
+                                        <FaBookmark />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-gray-800">Saved Articles</h3>
+                                </div>
+                                {savedPosts.length > 3 && (
+                                    <Link href="/profile/saved-posts" className="text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1">
+                                        View All <FaChevronRight className="text-xs" />
+                                    </Link>
+                                )}
+                            </div>
+
+                            {loadingSaved ? (
+                                <div className="text-center py-4 text-gray-500">Loading saved posts...</div>
+                            ) : savedPosts.length === 0 ? (
+                                <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                    <p className="text-gray-500">You haven't saved any articles yet.</p>
+                                    <Link href="/insights" className="text-blue-600 font-medium hover:underline mt-2 inline-block">
+                                        Browse Health Insights
+                                    </Link>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {savedPosts.slice(0, 3).map((post) => (
+                                        <div key={post.savedPostId} className="border border-gray-100 rounded-xl p-4 hover:bg-gray-50 transition-colors flex gap-4">
+                                            {post.imageUrl && (
+                                                <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                                                    <img src={post.imageUrl} alt={post.title} className="w-full h-full object-cover" />
+                                                </div>
+                                            )}
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-bold text-gray-900 line-clamp-2 text-sm mb-1">{post.title}</h4>
+                                                <div className="flex justify-between items-center mt-2">
+                                                    <span className="text-xs text-gray-500">{new Date(post.savedAt).toLocaleDateString()}</span>
+                                                    <a href={post.url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-blue-600 hover:underline">
+                                                        Read Article
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Edit Modal */}

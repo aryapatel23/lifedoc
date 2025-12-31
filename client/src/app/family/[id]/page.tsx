@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
 import { FaArrowLeft, FaFilePrescription, FaNotesMedical, FaVial, FaMicrophone, FaHeartbeat } from 'react-icons/fa';
 
 import DashboardLayout from '@/components/DashboardLayout';
@@ -20,7 +21,7 @@ export default function MemberHealthPage() {
         setAnalyzing(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.post(`http://localhost:5000/api/family/member/${id}/analyze`, {}, {
+            const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/family/member/${id}/analyze`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) {
@@ -41,7 +42,7 @@ export default function MemberHealthPage() {
     const fetchHealthData = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get(`http://localhost:5000/api/family/member/${id}/health`, {
+            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/family/member/${id}/health`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) {
@@ -75,7 +76,7 @@ export default function MemberHealthPage() {
             // Let's try sending `targetUserId` in body if the backend supports it, 
             // or use a new route I'll create: /api/family/member/:id/measurement
 
-            await axios.post(`http://localhost:5000/api/family/member/${id}/measurement`, payload, {
+            await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/family/member/${id}/measurement`, payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -348,13 +349,36 @@ export default function MemberHealthPage() {
                             </div>
                             {data.labReports.length === 0 ? <p className="text-gray-400 italic">No lab reports found.</p> : (
                                 <div className="space-y-4">
-                                    {data.labReports.map((report: any) => (
-                                        <div key={report._id} className="p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
-                                            <h3 className="font-bold text-gray-900">{report.testName || 'Lab Test'}</h3>
-                                            <p className="text-sm text-gray-500">{new Date(report.date).toLocaleDateString()}</p>
-                                            <p className="mt-1 text-sm text-gray-700">Result: {report.result || 'Pending'}</p>
-                                        </div>
-                                    ))}
+                                    {data.labReports.map((report: any) => {
+                                        // Helper to get a displayable result
+                                        let displayResult = 'View Details';
+                                        if (report.parsedResults) {
+                                            if (report.parsedResults.summary && report.parsedResults.summary.abnormalTests > 0) {
+                                                displayResult = `${report.parsedResults.summary.abnormalTests} Abnormal`;
+                                            } else if (report.parsedResults.tests && report.parsedResults.tests.length > 0) {
+                                                displayResult = report.parsedResults.tests[0].resultValue || 'Available';
+                                            } else if (Object.keys(report.parsedResults).length > 0) {
+                                                // Try to grab first value if simple object
+                                                const firstKey = Object.keys(report.parsedResults)[0];
+                                                if (typeof report.parsedResults[firstKey] !== 'object') {
+                                                    displayResult = String(report.parsedResults[firstKey]);
+                                                }
+                                            }
+                                        }
+
+                                        return (
+                                            <Link href={`/lab-reports/${report._id}`} key={report._id} className="block p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{report.testType || 'Lab Test'}</h3>
+                                                        <p className="text-sm text-gray-500">{new Date(report.reportDate).toLocaleDateString()}</p>
+                                                        <p className="mt-1 text-sm text-gray-700">Result: <span className="font-medium">{displayResult}</span></p>
+                                                    </div>
+                                                    <FaVial className="text-gray-300 group-hover:text-blue-500 transition-colors" />
+                                                </div>
+                                            </Link>
+                                        )
+                                    })}
                                 </div>
                             )}
                         </div>

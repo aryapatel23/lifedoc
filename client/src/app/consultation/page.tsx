@@ -57,7 +57,7 @@ export default function ConsultationPage() {
     const analyzeSymptoms = async (text: string) => {
         setAnalyzing(true);
         try {
-            const response = await fetch('http://localhost:5000/api/ai/analyze', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/analyze`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

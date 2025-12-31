@@ -25,7 +25,7 @@ const TestDetailsPage = () => {
     const [test, setTest] = useState<LabTest | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const API_URL = 'http://localhost:5000/api/reference';
+    const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/reference`;
 
     useEffect(() => {
         if (token && id) {

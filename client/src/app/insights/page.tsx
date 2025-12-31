@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import axios from 'axios';
+import { FaBookmark, FaRegBookmark } from 'react-icons/fa';
 
 interface Article {
     _id: string;
@@ -15,17 +16,27 @@ interface Article {
 
 const InsightsPage = () => {
     const [articles, setArticles] = useState<Article[]>([]);
+    const [savedArticleIds, setSavedArticleIds] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     useEffect(() => {
         const fetchNews = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/news');
-                if (response.data.success) {
-                    setArticles(response.data.data);
+                const token = localStorage.getItem('token');
+                const [newsRes, savedRes] = await Promise.all([
+                    axios.get(`${process.env.NEXT_PUBLIC_API_URL}/news`),
+                    token ? axios.get(`${process.env.NEXT_PUBLIC_API_URL}/saved-posts/ids`, { headers: { Authorization: `Bearer ${token}` } }) : Promise.resolve({ data: { success: false, data: [] } })
+                ]);
+
+                if (newsRes.data.success) {
+                    setArticles(newsRes.data.data);
                 } else {
                     setError('Failed to fetch news');
+                }
+
+                if (savedRes.data && savedRes.data.success) {
+                    setSavedArticleIds(new Set(savedRes.data.data));
                 }
             } catch (err) {
                 console.error(err);
@@ -37,6 +48,37 @@ const InsightsPage = () => {
 
         fetchNews();
     }, []);
+
+    const toggleSave = async (articleId: string) => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert("Please login to save articles.");
+                return;
+            }
+
+            const isSaved = savedArticleIds.has(articleId);
+
+            if (isSaved) {
+                await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/saved-posts/${articleId}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setSavedArticleIds(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(articleId);
+                    return newSet;
+                });
+            } else {
+                await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/saved-posts`, { articleId }, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setSavedArticleIds(prev => new Set(prev).add(articleId));
+            }
+        } catch (error) {
+            console.error("Error toggling save:", error);
+            alert("Failed to update bookmark.");
+        }
+    };
 
     return (
         <div className="flex min-h-screen bg-gray-50">
@@ -69,12 +111,21 @@ const InsightsPage = () => {
                                 )}
                                 <div className="p-5 flex-1 flex flex-col">
                                     <div className="flex items-center justify-between mb-2">
-                                        <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                                            {article.source || 'News'}
-                                        </span>
-                                        <span className="text-xs text-gray-400">
-                                            {new Date(article.publishedAt).toLocaleDateString()}
-                                        </span>
+                                        <div className="flex items-center space-x-2">
+                                            <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                                                {article.source || 'News'}
+                                            </span>
+                                            <span className="text-xs text-gray-400">
+                                                {new Date(article.publishedAt).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                        <button
+                                            onClick={() => toggleSave(article._id)}
+                                            className={`p-2 rounded-full transition-colors ${savedArticleIds.has(article._id) ? 'text-blue-600 bg-blue-50' : 'text-gray-400 hover:text-blue-500 hover:bg-gray-50'}`}
+                                            title={savedArticleIds.has(article._id) ? "Unsave" : "Save"}
+                                        >
+                                            {savedArticleIds.has(article._id) ? <FaBookmark /> : <FaRegBookmark />}
+                                        </button>
                                     </div>
                                     <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
                                         {article.title}

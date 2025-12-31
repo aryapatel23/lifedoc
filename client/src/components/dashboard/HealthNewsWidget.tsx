@@ -41,7 +41,7 @@ const HealthNewsWidget = () => {
             try {
                 setLoading(true);
                 // Use port 5000 as per previous fix
-                const apiUrl = 'http://localhost:5000/api';
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL;
                 const response = await axios.get(`${apiUrl}/news`);
 
                 if (response.data.success) {

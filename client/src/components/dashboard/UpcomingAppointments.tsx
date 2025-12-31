@@ -26,7 +26,7 @@ const UpcomingAppointments = () => {
             if (!token) return;
             try {
                 // Use port 5000
-                const API_URL = 'http://localhost:5000/api/appointments';
+                const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/appointments`;
                 const response = await axios.get(API_URL, {
                     headers: { Authorization: `Bearer ${token}` }
                 });

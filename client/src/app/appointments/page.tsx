@@ -31,7 +31,7 @@ const AppointmentsPage = () => {
     });
 
     // Use port 5000 as per previous fix
-    const API_URL = 'http://localhost:5000/api/appointments';
+    const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/appointments`;
 
     useEffect(() => {
         if (token) {

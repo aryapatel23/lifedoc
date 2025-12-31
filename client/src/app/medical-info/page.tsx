@@ -23,7 +23,7 @@ const MedicalInfoPage = () => {
     const [loading, setLoading] = useState(false);
     const [searchResults, setSearchResults] = useState<MedicalItem[]>([]);
 
-    const API_URL = 'http://localhost:5000/api/reference';
+    const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/reference`;
 
     useEffect(() => {
         if (token) {
@@ -61,6 +61,7 @@ const MedicalInfoPage = () => {
     };
 
     const handleSearch = async () => {
+        setLoading(true);
         try {
             const response = await axios.get(`${API_URL}/search`, {
                 params: { query: searchQuery, type: activeTab },
@@ -71,6 +72,8 @@ const MedicalInfoPage = () => {
             }
         } catch (error) {
             console.error('Search error:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -95,8 +98,8 @@ const MedicalInfoPage = () => {
                     <button
                         onClick={() => setActiveTab('medicine')}
                         className={`pb-4 px-2 font-bold text-lg transition-colors border-b-2 ${activeTab === 'medicine'
-                                ? 'border-[#3AAFA9] text-[#3AAFA9]'
-                                : 'border-transparent text-gray-400 hover:text-gray-600'
+                            ? 'border-[#3AAFA9] text-[#3AAFA9]'
+                            : 'border-transparent text-gray-400 hover:text-gray-600'
                             }`}
                     >
                         <FaPills className="inline mr-2 mb-1" /> Medicines
@@ -104,8 +107,8 @@ const MedicalInfoPage = () => {
                     <button
                         onClick={() => setActiveTab('test')}
                         className={`pb-4 px-2 font-bold text-lg transition-colors border-b-2 ${activeTab === 'test'
-                                ? 'border-[#3AAFA9] text-[#3AAFA9]'
-                                : 'border-transparent text-gray-400 hover:text-gray-600'
+                            ? 'border-[#3AAFA9] text-[#3AAFA9]'
+                            : 'border-transparent text-gray-400 hover:text-gray-600'
                             }`}
                     >
                         <FaVial className="inline mr-2 mb-1" /> Lab Tests
