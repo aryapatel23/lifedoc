@@ -178,9 +178,10 @@ We have a clear path to scale from **Monitoring** to **Action**.
 ---
 
 ## 👥 The Team
-*   **[Name]**: AI Integration & Backend Architecture
-*   **[Name]**: Frontend UI/UX & State Management
-*   **[Name]**: Database Design & Documentation
+*   **Mohit Soni**: AI Integration & Backend Architecture
+*   **Arya Patel**: Frontend UI/UX & State Management
+*   **Ishita Trivedi**: Database Design & Documentation
+*   **Visha Trivedi**: Database Design & Documentation
 
 ---
 *Built with ❤️ for generic health & wellness.*
