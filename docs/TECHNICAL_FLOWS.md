@@ -169,14 +169,16 @@ flowchart TD
     Start((SOS Button Pressed)) --> GetLoc[Get GPS Coordinates]
     GetLoc --> API[POST /api/sos/trigger]
     
-    API -->|Async| Parallel
+    API -->|Async| SMS
+    API -->|Async| WA
+    API -->|Async| DbLog
     
-    state Parallel {
-        direction LR
+    subgraph Parallel [Notification Channels]
+        direction TB
         SMS[Twilio SMS Service]
         WA[WhatsApp Business API]
         DbLog[Log Incident DB]
-    }
+    end
     
     SMS --> Family[Family Admin 1]
     SMS --> Family2[Family Admin 2]
