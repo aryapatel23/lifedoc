@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FaHome, FaHeartbeat, FaBookMedical, FaFileMedical, FaUserMd, FaSignOutAlt, FaMicrophone, FaCamera, FaUser, FaLightbulb, FaCalendarAlt, FaUsers, FaBell } from 'react-icons/fa';
+import { FaHome, FaHeartbeat, FaBookMedical, FaFileMedical, FaUserMd, FaSignOutAlt, FaMicrophone, FaCamera, FaUser, FaLightbulb, FaCalendarAlt, FaUsers, FaBell, FaHistory } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { logoutUser } from '@/store/slices/authSlice';
@@ -26,6 +26,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
     const navItems = [
         { name: 'Dashboard', path: '/dashboard', icon: FaHome },
         { name: 'AI Consultation', path: '/consultation', icon: FaMicrophone },
+        { name: 'My History', path: '/consultation/history', icon: FaHistory },
         // { name: 'Rx Scanner', path: '/scan', icon: FaCamera },
         { name: 'Measurements', path: '/measurements', icon: FaHeartbeat },
         { name: 'Diary', path: '/diary', icon: FaBookMedical },
@@ -39,6 +40,10 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
 
     if (user?.type === 'admin') {
         navItems.unshift({ name: 'Admin Panel', path: '/admin', icon: FaUsers });
+    }
+
+    if (user?.type === 'doctor') {
+        navItems.unshift({ name: 'Doctor Dashboard', path: '/doctor/dashboard', icon: FaUserMd });
     }
 
 

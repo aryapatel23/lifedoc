@@ -6,7 +6,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import { updateUserProfile, uploadProfilePhoto, fetchUserProfile } from '@/store/slices/authSlice';
-import { FaUser, FaEnvelope, FaBirthdayCake, FaIdCard, FaEdit, FaTimes, FaSave, FaCamera, FaStethoscope, FaCheck, FaChevronRight, FaBookmark, FaShareAlt } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaBirthdayCake, FaIdCard, FaEdit, FaTimes, FaSave, FaCamera, FaStethoscope, FaCheck, FaChevronRight, FaBookmark, FaShareAlt, FaUserMd } from 'react-icons/fa';
 import axios from 'axios';
 import Link from 'next/link';
 
@@ -420,6 +420,64 @@ export default function Profile() {
                                 </div>
 
                             </div>
+                        </div>
+
+                        {/* Doctor Verification Section */}
+                        <div className="mt-6 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-xl">
+                                    <FaUserMd />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-800">
+                                        {user?.type === 'doctor' ? 'Verified Doctor' : 'Are you a Doctor?'}
+                                    </h3>
+                                    <p className="text-gray-500 text-sm">
+                                        {user?.type === 'doctor'
+                                            ? 'You have full access to doctor features and patient consultations.'
+                                            : 'Join our network of healthcare professionals to help patients.'}
+                                    </p>
+                                </div>
+                            </div>
+                            {user?.type !== 'doctor' && (
+                                <Link href="/doctor/apply" className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-200">
+                                    Apply Now
+                                </Link>
+                            )}
+                            {user?.type === 'doctor' && (
+                                <span className="px-4 py-2 bg-green-100 text-green-700 font-bold rounded-lg flex items-center gap-2">
+                                    <FaCheck /> Verified
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Doctor Verification Section */}
+                        <div className="mt-6 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-xl">
+                                    <FaUserMd />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-800">
+                                        {user?.type === 'doctor' ? 'Verified Doctor' : 'Are you a Doctor?'}
+                                    </h3>
+                                    <p className="text-gray-500 text-sm">
+                                        {user?.type === 'doctor'
+                                            ? 'You have full access to doctor features and patient consultations.'
+                                            : 'Join our network of healthcare professionals to help patients.'}
+                                    </p>
+                                </div>
+                            </div>
+                            {user?.type !== 'doctor' && (
+                                <Link href="/doctor/apply" className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-200">
+                                    Apply Now
+                                </Link>
+                            )}
+                            {user?.type === 'doctor' && (
+                                <span className="px-4 py-2 bg-green-100 text-green-700 font-bold rounded-lg flex items-center gap-2">
+                                    <FaCheck /> Verified
+                                </span>
+                            )}
                         </div>
 
                         {/* My Health Story Section */}

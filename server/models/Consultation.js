@@ -40,6 +40,22 @@ const consultationSchema = new mongoose.Schema({
         promptTokens: { type: Number, default: 0 },
         completionTokens: { type: Number, default: 0 },
         totalTokens: { type: Number, default: 0 }
+    },
+    // Expert Review Fields
+    reviewStatus: {
+        type: String,
+        enum: ['none', 'pending', 'reviewed'],
+        default: 'none'
+    },
+    reviewedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    doctorNotes: {
+        type: String
+    },
+    reviewDate: {
+        type: Date
     }
 });
 

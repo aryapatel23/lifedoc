@@ -90,7 +90,11 @@ router.post('/analyze', auth, async (req, res) => {
 
         await newConsultation.save();
 
-        res.json(aiResult);
+        res.json({
+            ...aiResult,
+            _id: newConsultation._id,
+            reviewStatus: newConsultation.reviewStatus
+        });
     } catch (err) {
         console.error("Gemini AI Error:", err.message);
         res.status(500).json({ msg: 'Error processing AI request', error: err.message });
