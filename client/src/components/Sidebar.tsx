@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { logoutUser } from '@/store/slices/authSlice';
 import { AppDispatch } from '@/store/store';
+import LanguageSwitcher from './LanguageSwitcher';
 
 interface SidebarProps {
     isOpen?: boolean;
@@ -98,6 +99,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                         <span className="font-medium">Profile</span>
                     </Link>
 
+                    <LanguageSwitcher />
 
                     <div className="h-px bg-gray-200 my-2"></div>
 

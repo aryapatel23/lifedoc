@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ReduxProvider } from "@/store/ReduxProvider";
 import VoiceAssistant from "@/components/VoiceAssistant";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export const metadata: Metadata = {
   title: "LifeDoc - Your Health Documentation",
@@ -22,7 +21,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           {children}
           <VoiceAssistant />
         </ReduxProvider>
-        <LanguageSwitcher />
       </body>
     </html>
   );
