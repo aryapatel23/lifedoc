@@ -14,10 +14,13 @@ export default function ConsultationHistoryPage() {
     const [selectedConsultation, setSelectedConsultation] = useState<any | null>(null);
 
     useEffect(() => {
-        fetchHistory();
-    }, []);
+        if (token) {
+            fetchHistory();
+        }
+    }, [token]);
 
     const fetchHistory = async () => {
+        if (!token) return;
         try {
             const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/consultation/history`, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -33,7 +36,7 @@ export default function ConsultationHistoryPage() {
     return (
         <ProtectedRoute>
             <DashboardLayout>
-                <div className="p-6 max-w-7xl mx-auto min-h-screen">
+                <div className="w-full max-w-[1920px] mx-auto min-h-screen">
                     {/* Header */}
                     <div className="mb-8">
                         <h1 className="text-3xl font-extrabold text-gray-900 flex items-center gap-3">

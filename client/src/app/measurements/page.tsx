@@ -63,7 +63,7 @@ export default function MeasurementsPage() {
 
                 {/* Chart Section */}
                 <div className="bg-white border border-gray-100 rounded-2xl p-8 mb-8 shadow-sm">
-                    <div className="flex space-x-4 mb-8">
+                    <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
                         {[
                             { id: 'glucose', label: 'Glucose', icon: FaTint, color: 'text-teal-400', bg: 'bg-teal-50' },
                             { id: 'bp', label: 'Blood Pressure', icon: FaHeartbeat, color: 'text-blue-400', bg: 'bg-blue-50' },
@@ -72,7 +72,7 @@ export default function MeasurementsPage() {
                             <button
                                 key={type.id}
                                 onClick={() => setSelectedType(type.id as any)}
-                                className={`flex items-center space-x-3 px-6 py-3 rounded-full font-bold transition-all ${selectedType === type.id
+                                className={`flex items-center space-x-3 px-6 py-3 rounded-full font-bold transition-all whitespace-nowrap ${selectedType === type.id
                                     ? 'bg-white shadow-md ring-2 ring-offset-2 ring-[#7A8E6B]/20 text-gray-900'
                                     : 'hover:bg-gray-50 text-gray-500'
                                     }`}
@@ -124,7 +124,7 @@ export default function MeasurementsPage() {
                 </div>
 
                 {/* History List */}
-                <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
+                <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
                     <h3 className="text-xl font-bold text-gray-900 mb-6">Recent History</h3>
 
                     {loading ? (
@@ -135,7 +135,7 @@ export default function MeasurementsPage() {
                             <Link href="/measurements/new" className="text-[#7A8E6B] font-bold hover:underline">Add your first reading</Link>
                         </div>
                     ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
                             {measurements.map((measurement) => (
                                 <div key={measurement._id} className="group flex items-center justify-between p-5 rounded-xl border border-gray-100 hover:border-[#7A8E6B]/30 hover:shadow-sm transition-all duration-300">
                                     <div className="flex items-center space-x-6">
