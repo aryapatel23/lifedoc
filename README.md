@@ -17,132 +17,59 @@
 
 ---
 
-## 🚀 Round 1: Core Features (The "Why" & "How")
+## 🌟 Key Features
 
 ### 1. 🗣️ AI Speak & Voice Interaction (Accessibility First)
 > *"Technology should adapt to people, not the other way around."*
-
-*   **The Real-World Problem:**
-    *   **Literacy Barriers:** Many rural users cannot read complex medical text.
-    *   **Age Factor:** Elderly users often struggle to type on small smartphone screens due to shaky hands or poor eyesight.
-    *   **Language:** Medical advice is often in English, which might not be the user's first language.
-*   **The LifeDoc Solution:**
-    *   **Text-to-Speech:** After analyzing a prescription, the app **speaks out** the instructions (e.g., *"Take the white tablet after dinner"*).
-    *   **Voice Commands (Planned):** Users can simply speak to the app ("I have a headache") instead of typing, making healthcare accessible to the 70+ demographic.
+*   **Text-to-Speech:** After analyzing a prescription, the app **speaks out** the instructions (e.g., *"Take the white tablet after dinner"*).
+*   **Voice Commands:** Users can simply speak to the app ("I have a headache") instead of typing, making healthcare accessible to the 70+ demographic.
 
 ### 2. 🤖 Dr. Gemini (Intelligent Symptom Triage)
-*   **The Real-World Problem:**
-    *   **Dr. Google Panic:** Searching symptoms online often leads to scary, incorrect self-diagnoses.
-    *   **Hospital Overcrowding:** People rush to the ER for minor issues (indigestion) or ignore major ones (chest pain).
-*   **The LifeDoc Solution:**
-    *   An AI that acts like a **sensible Family Doctor**. It uses **Context-Injection** (knowing your age, gender, and history) to give personalized advice.
-    *   **Outcome:** Reduces anxiety by clearly stating: *"This is likely a migraine (Low Risk). Rest in a dark room."*
+*   **Context-Injection:** Acts like a sensible Family Doctor, knowing your age, gender, and history to give personalized advice.
+*   **Outcome:** Reduces anxiety by clearly stating risk levels and immediate actions.
 
 ### 3. 💊 Smart Prescription Lens (Computer Vision)
-*   **The Real-World Problem:**
-    *   **The "Shoebox" Effect:** Patients lose physical prescription papers.
-    *   **Bad Handwriting:** Doctors' handwriting is notoriously hard to read, leading to medication errors.
-    *   **Forgetfulness:** Elderly patients often forget *when* to take which medicine.
-*   **The LifeDoc Solution:**
-    *   Scan the paper once using **GPT-4o Vision**.
-    *   The app digitizes it into a **Structured Schedule** (Morning/Afternoon/Night) and sets auto-reminders. No more lost papers, no more missed doses.
+*   Scan paper prescriptions using **GPT-4o Vision**.
+*   Digitizes into a **Structured Schedule** (Morning/Afternoon/Night) and sets auto-reminders.
 
 ### 4. 🛡️ Family Health Dashboard (The Guardian)
-*   **The Real-World Problem:**
-    *   **Distance:** Children working in cities often have no clue about their parents' health in the village until a crisis hits.
-    *   **Reactive Care:** We only treat sickness; we don't prevent it.
-*   **The LifeDoc Solution:**
-    *   A **Shared Family View**. You can see your father's BP trends from 1000 miles away.
-    *   **Proactive Alerts:** If the trend line goes up over 7 days, the AI warns the family group *before* a heart attack happens.
+*   **Shared Family View:** See your family's health trends from anywhere.
+*   **Proactive Alerts:** AI warns the family group *before* a health crisis happens based on trend analysis.
 
 ### 5. 🔬 Smart Lab Reports (Jargon Translator)
-*   **The Real-World Problem:**
-    *   **Confusion:** Reports say *"Neutrophils: 40%"* or *"HbA1c: 7.2"*. Most people have zero idea if this is good or bad without visiting a doctor.
-*   **The LifeDoc Solution:**
-    *   AI translates this into **Plain English**: *"Your sugar levels indicate Pre-Diabetes. You need to cut down on carbs and walk more."*
-    *   Empowers users to understand their own body.
+*   Translates complex lab values (e.g., "HbA1c: 7.2") into **Plain English** explanations and actionable advice.
 
 ---
 
-## 🛠️ System Architecture (Mandatory Diagrams)
+## 📁 Project Structure
 
-### A. System Architecture
-```mermaid
-graph TD
-    A[Client Browser] -->|HTTPS| B[Next.js Frontend]
-    B -->|REST API| C[Express Backend]
-    C -->|Mongoose ORM| D[(MongoDB Atlas)]
-    C -->|Upload Images| E[Cloudinary Storage]
-    C -->|AI Analysis| F[Google Gemini API]
-    C -->|Vision OCR| G[OpenAI GPT-4o]
-    C -->|Send OTP| H[Nodemailer SMTP]
-    
-    subgraph Services [Backend Services]
-        direction TB
-        C --> I[Auth Controller]
-        C --> J[AI Consultation]
-        C --> K[Prescription Engine]
-        C --> L[Lab Report Analyzer]
-        C --> M[Family Guardian]
-    end
-    
-    subgraph Middleware [Middleware Layer]
-        direction TB
-        N[Auth Middleware]
-        O[Multer Upload]
-        P[Error Handler]
-        Q[Rate Limiter]
-    end
-    
-    I -.->|Uses| N
-    J -.->|Uses| N
-    K -.->|Uses| O
-    M -.->|Uses| N
+The project is divided into two main parts: a **Client** (Frontend) and a **Server** (Backend).
+
 ```
-
-### B. Data Flow Architecture
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant F as Frontend (Next.js)
-    participant M as Middleware
-    participant B as Backend API
-    participant AI as Gemini AI
-    participant D as Database
-    
-    U->>F: "I have a headache..."
-    F->>M: POST /api/ai/analyze (with Token)
-    M->>M: Validate JWT
-    M->>B: Route to AI Controller
-    B->>D: Fetch User Profile (Age/Conditions)
-    D-->>B: User Data
-    B->>AI: Prompt: "Analyze symptoms for 55yo male..."
-    AI-->>B: JSON { urgency: "High", actions: [...] }
-    B->>D: Save Consultation Record
-    B-->>F: Return Structured Advice
-    F-->>U: Display Triage Result
+LifeDoc/
+├── client/                 # Frontend Application (Next.js 16)
+│   ├── src/
+│   │   ├── app/           # App Router Pages
+│   │   ├── components/    # Reusable UI Components
+│   │   ├── store/         # Redux State Management
+│   │   └── services/      # API Service Calls
+│   └── package.json
+│
+├── server/                 # Backend API (Express.js)
+│   ├── routes/            # API Route Definitions
+│   │   ├── ai.js          # AI Analysis Routes
+│   │   ├── auth.js        # Authentication Routes
+│   │   └── ...            # Other Feature Routes
+│   ├── models/            # Mongoose Database Models
+│   ├── controllers/       # Request Logic Handlers
+│   └── package.json
+│
+└── README.md              # Project Documentation
 ```
 
 ---
 
-## 🔮 Round 2 Plan: "The Slingshot" (Mandatory)
-
-We have a clear path to scale from **Monitoring** to **Action**.
-
-> **See Full Feature List (8+ Items): [Round 2 Roadmap](./docs/ROUND2_PLAN.md)**
-
-### 🏆 Top 3 Game-Changing Features
-| Feature | The "Why" (Need) | Implementation Plan |
-| :--- | :--- | :--- |
-| **🚨 Emergency SOS** | **Critical Safety.** If an elderly user collapses, minutes matter. | **Twilio API:** Triggers SMS/WhatsApp to all family admins with a Live Maps Link. |
-| **🏥 Pharmacy Connect** | **Convenience.** Sick patients shouldn't queue at pharmacies. | **Partner API:** Auto-forward digitized prescriptions to local pharmacies for 1-hour delivery. |
-| **🗣️ Voice-First Mode** | **Accessibility.** Many elderly cannot type on touchscreens. | **Web Speech API:** Full voice-command control ("Hey LifeDoc, log my BP as 120/80"). |
-
-*(Other planned features: Wearable Sync, Mental Health AI, Gamification, and Blockchain Health Records - see full doc)*
-
----
-
-## 💻 Technology Stack
+## 🛠️ Technology Stack
 
 | Layer | Technologies Used |
 | :--- | :--- |
@@ -156,24 +83,93 @@ We have a clear path to scale from **Monitoring** to **Action**.
 
 ## ⚙️ How to Run Locally
 
-1.  **Clone & Install**
-    ```bash
-    git clone https://github.com/your-repo/LifeDoc.git
-    cd LifeDoc
-    ```
+### 1. Clone the Repository
+```bash
+git clone https://github.com/your-repo/LifeDoc.git
+cd LifeDoc
+```
 
-2.  **Environment Setup (`server/.env`)**
-    ```env
-    MONGO_URI=mongodb+srv://...
-    GEMINI_API_KEY=AIzaSy...
-    OPENAI_API_KEY=sk-proj...
-    CLOUDINARY_URL=cloudinary://...
-    JWT_SECRET=supersecret
-    ```
+### 2. Backend Setup
+Navigate to the `server` directory and install dependencies:
+```bash
+cd server
+npm install
+```
 
-3.  **Run System**
-    *   **Server:** `cd server && npm run dev` (Port 5000)
-    *   **Client:** `cd client && npm run dev` (Port 3000)
+Create a `.env` file in the `server` directory with the following keys:
+```env
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_secret_key_for_jwt
+# AI Providers
+GEMINI_API_KEY=your_google_gemini_api_key
+OPENAI_API_KEY=your_openai_api_key_for_vision
+# Image Storage
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+# Email Service
+EMAIL_USER=your_email_for_nodemailer
+EMAIL_PASS=your_email_app_password
+```
+
+Start the Development Server:
+```bash
+npm run dev
+# Server runs on http://localhost:5000
+```
+
+### 3. Frontend Setup
+Open a new terminal, navigate to the `client` directory and install dependencies:
+```bash
+cd client
+npm install
+```
+
+Create a `.env.local` file in the `client` directory:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
+```
+
+Start the Frontend Application:
+```bash
+npm run dev
+# Application runs on http://localhost:3000
+```
+
+---
+
+## 🔌 API Overview
+
+Core endpoints managed by the Express server:
+
+### Authentication (`/api/auth`)
+*   `POST /register` - Create a new user account.
+*   `POST /login` - Authenticate user and receive JWT.
+
+### AI Services (`/api/ai`)
+*   `POST /analyze` - Analyzes symptoms using Gemini 1.5 Flash.
+*   `POST /analyze-image` - Processes medical images/reports.
+
+### Health Records (`/api/measurements`, `/api/lab-reports`)
+*   `GET /` - Fetch user's health history.
+*   `POST /` - Log new measurements or upload reports.
+
+### Family (`/api/family`)
+*   `POST /add` - Add a family member.
+*   `GET /overview` - Get health overview of linked family members.
+
+To explore all routes, check the `server/routes` folder.
+
+---
+
+## 🤝 Contributing
+
+1.  Fork the repository.
+2.  Create a new branch (`git checkout -b feature/AmazingFeature`).
+3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4.  Push to the branch (`git push origin feature/AmazingFeature`).
+5.  Open a Pull Request.
 
 ---
 
