@@ -19,6 +19,13 @@ interface User {
     storyDesc?: string;
   };
   profileImage?: string;
+  sosContacts?: {
+    name: string;
+    phone: string;
+    relationship?: string;
+    email?: string;
+    _id?: string;
+  }[];
 }
 
 interface AuthState {
@@ -156,6 +163,12 @@ export const updateUserProfile = createAsyncThunk(
       weight?: number;
       bloodGroup?: string;
       chronicConditions?: string[];
+      sosContacts?: {
+        name: string;
+        phone: string;
+        relationship?: string;
+        email?: string;
+      }[];
     },
     { rejectWithValue }
   ) => {

@@ -16,7 +16,8 @@ export default function Profile() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Editing State (Modal)
-    const [editSection, setEditSection] = useState<'personal' | 'health' | null>(null);
+    const [editSection, setEditSection] = useState<'personal' | 'health' | 'sos' | null>(null);
+    const [editingContactIndex, setEditingContactIndex] = useState<number | null>(null);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -26,7 +27,11 @@ export default function Profile() {
         height: '',
         weight: '',
         bloodGroup: '',
-        chronicConditions: ''
+        chronicConditions: '',
+        sosName: '',
+        sosPhone: '',
+        sosRelation: '',
+        sosEmail: ''
     });
 
     // Explain Yourself State
@@ -88,7 +93,11 @@ export default function Profile() {
                 height: user.profile?.height?.toString() || '',
                 weight: user.profile?.weight?.toString() || '',
                 bloodGroup: user.profile?.bloodGroup || '',
-                chronicConditions: user.profile?.chronicConditions?.join(', ') || ''
+                chronicConditions: user.profile?.chronicConditions?.join(', ') || '',
+                sosName: '',
+                sosPhone: '',
+                sosRelation: '',
+                sosEmail: ''
             });
         }
     }, [user]);
@@ -123,10 +132,70 @@ export default function Profile() {
             if (formData.chronicConditions) {
                 payload.chronicConditions = formData.chronicConditions.split(',').map((c: string) => c.trim()).filter(Boolean);
             }
+            if (formData.chronicConditions) {
+                payload.chronicConditions = formData.chronicConditions.split(',').map((c: string) => c.trim()).filter(Boolean);
+            }
+        }
+
+        if (editSection === 'sos') {
+            let currentContacts = user?.sosContacts ? [...user.sosContacts] : [];
+
+            const newContact = {
+                name: formData.sosName,
+                phone: formData.sosPhone,
+                relationship: formData.sosRelation,
+                email: formData.sosEmail
+            };
+
+            if (editingContactIndex !== null && editingContactIndex >= 0) {
+                // Edit existing
+                currentContacts[editingContactIndex] = { ...currentContacts[editingContactIndex], ...newContact };
+            } else {
+                // Add new
+                currentContacts.push(newContact);
+            }
+
+            payload.sosContacts = currentContacts;
         }
 
         await dispatch(updateUserProfile(payload));
         setEditSection(null);
+        setEditingContactIndex(null);
+    };
+
+    const handleDeleteContact = async (index: number) => {
+        if (!user || !user.sosContacts) return;
+
+        const updatedContacts = [...user.sosContacts];
+        updatedContacts.splice(index, 1);
+
+        await dispatch(updateUserProfile({ sosContacts: updatedContacts }));
+    };
+
+    const openEditContact = (index: number) => {
+        if (!user || !user.sosContacts) return;
+        const contact = user.sosContacts[index];
+        setFormData(prev => ({
+            ...prev,
+            sosName: contact.name,
+            sosPhone: contact.phone,
+            sosRelation: contact.relationship || '',
+            sosEmail: contact.email || ''
+        }));
+        setEditingContactIndex(index);
+        setEditSection('sos');
+    };
+
+    const openAddContact = () => {
+        setFormData(prev => ({
+            ...prev,
+            sosName: '',
+            sosPhone: '',
+            sosRelation: '',
+            sosEmail: ''
+        }));
+        setEditingContactIndex(null);
+        setEditSection('sos');
     };
 
     const handleCloseModal = () => {
@@ -140,8 +209,13 @@ export default function Profile() {
                 height: user.profile?.height?.toString() || '',
                 weight: user.profile?.weight?.toString() || '',
                 bloodGroup: user.profile?.bloodGroup || '',
-                chronicConditions: user.profile?.chronicConditions?.join(', ') || ''
+                chronicConditions: user.profile?.chronicConditions?.join(', ') || '',
+                sosName: '',
+                sosPhone: '',
+                sosRelation: '',
+                sosEmail: ''
             });
+            setEditingContactIndex(null);
         }
     };
 
@@ -248,7 +322,7 @@ export default function Profile() {
     return (
         <ProtectedRoute>
             <DashboardLayout>
-                <div className="flex flex-col min-h-screen bg-white">
+                <div className="flex flex-col min-h-screen bg-gray-50/30">
                     <header className="mb-8 flex justify-between items-end">
                         <div>
                             <p className="text-gray-400 text-sm font-semibold uppercase tracking-wider mb-1">My Account</p>
@@ -258,12 +332,12 @@ export default function Profile() {
                         </div>
                     </header>
 
-                    <div className="max-w-4xl">
+                    <div className="w-full px-4 sm:px-6 lg:px-8 max-w-[1920px] mx-auto">
                         {/* Profile Header Card */}
-                        <div className="bg-gradient-primary rounded-2xl p-8 mb-8 shadow-lg relative overflow-hidden">
-                            <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6">
-                                <div className="relative group">
-                                    <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center text-4xl font-bold text-[#7A8E6B] shadow-md border-4 border-white/20 overflow-hidden">
+                        <div className="bg-gradient-to-r from-[#7A8E6B] to-[#5A6E4B] rounded-3xl p-8 mb-8 shadow-xl relative overflow-hidden ring-1 ring-black/5">
+                            <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-8">
+                                <div className="relative group perspective-1000">
+                                    <div className="w-28 h-28 bg-white rounded-2xl rotate-3 shadow-lg flex items-center justify-center text-5xl font-bold text-[#7A8E6B] border-4 border-white overflow-hidden transform transition-transform group-hover:rotate-0 duration-300">
                                         {user?.profileImage ? (
                                             <img src={user.profileImage} alt="Profile" className="w-full h-full object-cover" />
                                         ) : user?.profile?.photoUrl ? (
@@ -317,9 +391,9 @@ export default function Profile() {
                         </div>
 
                         {/* Details Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                             {/* Personal Information */}
-                            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow h-full">
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                                         <FaIdCard className="text-[#7A8E6B]" />
@@ -334,7 +408,7 @@ export default function Profile() {
                                 </div>
 
                                 <div className="space-y-4">
-                                    <div className="p-4 bg-gray-50 rounded-xl">
+                                    <div className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100/50 hover:bg-gray-50 transition-colors">
                                         <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Full Name</p>
                                         <p className="text-gray-900 font-medium">{user?.name || '--'}</p>
                                     </div>
@@ -350,7 +424,7 @@ export default function Profile() {
                             </div>
 
                             {/* Health Profile Summary */}
-                            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                                         <FaUser className="text-[#7A8E6B]" />
@@ -423,7 +497,7 @@ export default function Profile() {
                         </div>
 
                         {/* Doctor Verification Section */}
-                        <div className="mt-6 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between">
+                        <div className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-3xl border border-blue-100 shadow-sm flex items-center justify-between relative overflow-hidden">
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-xl">
                                     <FaUserMd />
@@ -451,38 +525,63 @@ export default function Profile() {
                             )}
                         </div>
 
-                        {/* Doctor Verification Section */}
-                        <div className="mt-6 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-xl">
-                                    <FaUserMd />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-bold text-gray-800">
-                                        {user?.type === 'doctor' ? 'Verified Doctor' : 'Are you a Doctor?'}
-                                    </h3>
-                                    <p className="text-gray-500 text-sm">
-                                        {user?.type === 'doctor'
-                                            ? 'You have full access to doctor features and patient consultations.'
-                                            : 'Join our network of healthcare professionals to help patients.'}
-                                    </p>
-                                </div>
+                        {/* SOS Contacts Section */}
+                        <div className="mt-8 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                    <FaEnvelope className="text-red-500" />
+                                    SOS / Emergency Contacts
+                                </h3>
+                                <button
+                                    onClick={openAddContact}
+                                    className="text-sm font-semibold text-[#7A8E6B] hover:text-[#6a7d5d] transition-colors flex items-center gap-1 bg-[#7A8E6B]/10 px-3 py-1.5 rounded-lg"
+                                >
+                                    + Add Contact
+                                </button>
                             </div>
-                            {user?.type !== 'doctor' && (
-                                <Link href="/doctor/apply" className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-200">
-                                    Apply Now
-                                </Link>
-                            )}
-                            {user?.type === 'doctor' && (
-                                <span className="px-4 py-2 bg-green-100 text-green-700 font-bold rounded-lg flex items-center gap-2">
-                                    <FaCheck /> Verified
-                                </span>
+
+                            {user?.sosContacts && user.sosContacts.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                    {user.sosContacts.map((contact: any, idx: number) => (
+                                        <div key={idx} className="p-4 bg-red-50 rounded-xl border border-red-100 relative group">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <p className="font-bold text-gray-900">{contact.name}</p>
+                                                    <p className="text-sm text-gray-600">{contact.relationship}</p>
+                                                    <p className="text-sm text-gray-800 font-mono mt-1">{contact.phone}</p>
+                                                    {contact.email && <p className="text-xs text-gray-500">{contact.email}</p>}
+                                                </div>
+                                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={() => openEditContact(idx)}
+                                                        className="text-gray-400 hover:text-blue-500"
+                                                    >
+                                                        <FaEdit />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteContact(idx)}
+                                                        className="text-gray-400 hover:text-red-500"
+                                                    >
+                                                        <FaTimes />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-6 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                    <p className="text-gray-500 mb-2">No emergency contacts added yet.</p>
+                                    <p className="text-xs text-gray-400">Add trusted contacts for emergency situations.</p>
+                                </div>
                             )}
                         </div>
+
+
 
                         {/* My Health Story Section */}
                         {user?.profile?.storyDesc && (
-                            <div className="mt-6 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="mt-8 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                                 <div className="flex items-center gap-2 mb-4">
                                     <div className="w-10 h-10 bg-[#7A8E6B]/10 rounded-full flex items-center justify-center text-[#7A8E6B]">
                                         <FaStethoscope />
@@ -498,7 +597,7 @@ export default function Profile() {
                         )}
 
                         {/* Saved Posts Section */}
-                        <div className="mt-6 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="mt-8 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
                                     <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
@@ -523,7 +622,7 @@ export default function Profile() {
                                     </Link>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                     {savedPosts.slice(0, 3).map((post) => (
                                         <div key={post.savedPostId} className="border border-gray-100 rounded-xl p-4 hover:bg-gray-50 transition-colors flex gap-4">
                                             {post.imageUrl && (
@@ -553,7 +652,9 @@ export default function Profile() {
                             <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl transform transition-all scale-100">
                                 <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-2xl">
                                     <h3 className="text-xl font-bold text-gray-900">
-                                        Edit {editSection === 'personal' ? 'Personal Information' : 'Health Profile'}
+                                        {editSection === 'personal' ? 'Edit Personal Information' :
+                                            editSection === 'health' ? 'Edit Health Profile' :
+                                                editSection === 'sos' ? (editingContactIndex !== null ? 'Edit Contact' : 'Add Contact') : ''}
                                     </h3>
                                     <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-600">
                                         <FaTimes className="text-xl" />
@@ -647,6 +748,51 @@ export default function Profile() {
                                                     value={formData.chronicConditions}
                                                     onChange={handleInputChange}
                                                     placeholder="Diabetes, Hypertension"
+                                                    className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#7A8E6B]/50"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                    {editSection === 'sos' && (
+                                        <div className="grid grid-cols-1 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-1">Contact Name *</label>
+                                                <input
+                                                    type="text"
+                                                    name="sosName"
+                                                    value={formData.sosName}
+                                                    onChange={handleInputChange}
+                                                    className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#7A8E6B]/50"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-1">Phone Number *</label>
+                                                <input
+                                                    type="tel"
+                                                    name="sosPhone"
+                                                    value={formData.sosPhone}
+                                                    onChange={handleInputChange}
+                                                    className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#7A8E6B]/50"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-1">Relationship</label>
+                                                <input
+                                                    type="text"
+                                                    name="sosRelation"
+                                                    value={formData.sosRelation}
+                                                    onChange={handleInputChange}
+                                                    placeholder="e.g. Spouse, Parent, Doctor"
+                                                    className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#7A8E6B]/50"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-1">Email (Optional)</label>
+                                                <input
+                                                    type="email"
+                                                    name="sosEmail"
+                                                    value={formData.sosEmail}
+                                                    onChange={handleInputChange}
                                                     className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#7A8E6B]/50"
                                                 />
                                             </div>
