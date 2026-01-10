@@ -5,22 +5,13 @@
 [![Gemini](https://img.shields.io/badge/AI-Gemini%201.5%20Flash-blue?style=for-the-badge&logo=google&logoColor=white)](https://deepmind.google/technologies/gemini/)
 
 > **Hack The Winter: The Second Wave (Angry Bird Edition)**
-> **Track:** Health & Wellness | **Team Name:** [Your Team Name]
+> **Track:** Health & Wellness | **Team Name:** TechBytes
 > **Deployed URL:** [https://lifedoc.vercel.app](https://your-deployment-link.com)
 
 ---
 
 ## 📋 Executive Summary
 **LifeDoc** is not just another health chatbot; it is a **multi-modal Family Health Guardian**. While most solutions focus on reactive text responses, LifeDoc proactively monitors family health through **Computer Vision (Rx Digitization)**, **Voice Interaction (Elderly Access)**, and **Context-Aware AI Analysis**.
-
-### 🏆 Why We Win (Winning Factors)
-1.  **True Scalability:** Built on a stateless, modular architecture ready for microservices decomposition.
-2.  **Inclusivity (Rural/Elderly Focus):** Breaking literacy barriers with **Voice-First flows** and **Multilingual support**.
-3.  **Real Innovation:** We don't just "wrap" ChatGPT. We implement complex pipelines for:
-    *   Digitizing handwritten prescriptions (OCR + Entity Extraction).
-    *   Automating family alerts based on vitals thresholds.
-
----
 
 ## 🧠 Business Logic & Data Flow Diagrams
 We believe in transparency. Here is exactly how our system processes complex health data.
