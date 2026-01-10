@@ -6,10 +6,11 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import { updateUserProfile, uploadProfilePhoto, fetchUserProfile } from '@/store/slices/authSlice';
-import { FaUser, FaEnvelope, FaBirthdayCake, FaIdCard, FaEdit, FaTimes, FaSave, FaCamera, FaStethoscope, FaCheck, FaChevronRight, FaBookmark, FaShareAlt, FaUserMd } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaBirthdayCake, FaIdCard, FaEdit, FaTimes, FaSave, FaCamera, FaStethoscope, FaCheck, FaChevronRight, FaBookmark, FaShareAlt, FaUserMd, FaCog } from 'react-icons/fa';
 import axios from 'axios';
 import Link from 'next/link';
 import { QRCodeCanvas } from 'qrcode.react';
+import LanguageSwitcher from '@/components/LanguageSwitcher'; // <--- Import
 
 export default function Profile() {
     const dispatch = useDispatch<AppDispatch>();
@@ -589,6 +590,28 @@ export default function Profile() {
                         </div>
 
 
+
+                        {/* Settings Section */}
+                        <div className="mt-8 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                    <FaCog className="text-gray-500" />
+                                    Settings
+                                </h3>
+                            </div>
+                            <div className="flex flex-col gap-4">
+                                <div className="p-4 bg-gray-50 rounded-xl flex justify-between items-center">
+                                    <div>
+                                        <p className="font-bold text-gray-900">App Language</p>
+                                        <p className="text-sm text-gray-500">Change the language of the application interface.</p>
+                                    </div>
+                                    <div className="relative">
+                                        {/* Embed Language Switcher Here */}
+                                        <LanguageSwitcher className="!relative !flex-row !bottom-auto !right-auto" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                         {/* My Health Story Section */}
                         {user?.profile?.storyDesc && (

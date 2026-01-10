@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react';
 import { FaGlobe, FaTimes, FaChevronUp } from 'react-icons/fa';
 
+interface LanguageSwitcherProps {
+    className?: string; // Allow custom positioning/styling
+}
+
 declare global {
     interface Window {
         google: any;
@@ -10,7 +14,7 @@ declare global {
     }
 }
 
-export default function LanguageSwitcher() {
+export default function LanguageSwitcher({ className }: LanguageSwitcherProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [currentLang, setCurrentLang] = useState('en');
 
@@ -67,7 +71,7 @@ export default function LanguageSwitcher() {
     ];
 
     return (
-        <div className="fixed bottom-6 right-52 z-50 flex flex-col items-end gap-4 print:hidden">
+        <div className={`relative flex flex-col items-end gap-4 print:hidden ${className || ''}`}>
             {/* Hidden container for the Google widget */}
             <div id="google_translate_element" className="hidden"></div>
 

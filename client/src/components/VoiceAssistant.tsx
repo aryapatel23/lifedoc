@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import 'regenerator-runtime/runtime';
-import { FaMicrophone, FaTimes, FaCheck, FaSave } from 'react-icons/fa';
+import { FaMicrophone, FaTimes, FaCheck, FaSave, FaRobot } from 'react-icons/fa';
 import SpeechRecognition, {
     useSpeechRecognition,
 } from 'react-speech-recognition';
@@ -24,7 +24,11 @@ interface ParsedData {
     originalText: string;
 }
 
-function VoiceAssistantComponent() {
+interface VoiceAssistantProps {
+    className?: string;
+}
+
+function VoiceAssistantComponent({ className }: VoiceAssistantProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [view, setView] = useState<'listening' | 'confirm'>('listening');
     const [parsedData, setParsedData] = useState<ParsedData | null>(null);
@@ -110,8 +114,54 @@ function VoiceAssistantComponent() {
                 setView('confirm');
                 SpeechRecognition.stopListening();
             }
+            // ... (previous regex logic for match)
+
+            if (match) {
+                // ... (existing sugar level logic)
+            } else {
+                // 3. Fallback: Ask AI Guide
+                handleAIGuide(finalTranscript);
+                SpeechRecognition.stopListening();
+            }
         }
     }, [finalTranscript, view, router]);
+
+    const handleAIGuide = async (text: string) => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return; // Silent fail if not logged in
+
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/guide`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ text })
+            });
+            const data = await res.json();
+
+            if (data.message) {
+                console.log("🤖 AI Guide:", data.message);
+                speak(data.message);
+
+                // Handle optional actions
+                if (data.action === "NAVIGATE_HOME") router.push('/');
+                // Add more actions as needed
+            }
+        } catch (err) {
+            console.error("AI Guide Error", err);
+        }
+    };
+
+    const speak = (text: string) => {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9; // Slower for elderly
+            utterance.pitch = 1;
+            window.speechSynthesis.speak(utterance);
+        }
+    };
 
     // Apply polyfill
     useEffect(() => {
@@ -175,11 +225,12 @@ function VoiceAssistantComponent() {
         <>
             <button
                 onClick={handleToggle}
-                className={`fixed bottom-6 right-6 z-50 p-4 rounded-full shadow-lg transition-transform hover:scale-110 
-            ${listening ? 'bg-red-500 animate-pulse' : 'bg-blue-600'} text-white`}
+                className={`fixed bottom-44 right-6 z-50 p-4 rounded-full shadow-lg transition-transform hover:scale-110 
+            ${listening ? 'bg-red-500 animate-pulse' : 'bg-blue-600'} text-white ${className || ''}`}
                 title="Voice Assistant"
             >
-                {listening ? <div className="w-6 h-6 flex items-center justify-center font-bold">...</div> : <FaMicrophone size={24} />}
+                {/* Use FaRobot instead of FaMicrophone */}
+                {listening ? <div className="w-6 h-6 flex items-center justify-center font-bold">...</div> : <FaRobot size={24} />}
             </button>
 
             {isOpen && (
@@ -188,7 +239,7 @@ function VoiceAssistantComponent() {
 
                         <div className="bg-blue-600 p-4 flex justify-between items-center text-white">
                             <h3 className="font-semibold flex items-center gap-2">
-                                <FaMicrophone />
+                                <FaRobot /> {/* Updated header icon too */}
                                 {view === 'listening' ? 'Voice Assistant' : 'Confirm Details'}
                             </h3>
                             <button onClick={handleClose} className="hover:bg-blue-700 p-1 rounded">

@@ -2,14 +2,9 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ReduxProvider } from "@/store/ReduxProvider";
-
-import VoiceAssistant from "@/components/VoiceAssistant";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
-import SpeechInput from "./Components/SpeechInput";
+import ActionDock from "@/components/ActionDock";
 
 const inter = Inter({ subsets: ["latin"] });
-
-
 
 export const metadata: Metadata = {
   title: "LifeDoc - Your Health Documentation",
@@ -22,15 +17,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-
       <body className={inter.className}>
-
         <ReduxProvider>
           {children}
-          <VoiceAssistant />
+          <ActionDock />
         </ReduxProvider>
-        <LanguageSwitcher />
-        <SpeechInput />
       </body>
     </html>
   );

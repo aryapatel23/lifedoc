@@ -8,7 +8,11 @@ import SpeechRecognition, {
 import { FaMicrophone, FaStop, FaTimes, FaUndo, FaChevronUp } from 'react-icons/fa';
 
 // Component logic
-function VoiceToText() {
+interface VoiceToTextProps {
+  className?: string;
+}
+
+function VoiceToText({ className }: VoiceToTextProps) {
   const {
     transcript,
     interimTranscript,
@@ -52,7 +56,7 @@ function VoiceToText() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4 print:hidden notranslate">
+    <div className={`fixed bottom-24 right-6 z-50 flex flex-col items-end gap-4 print:hidden notranslate ${className || ''}`}>
       {isOpen && (
         <div className="bg-white rounded-2xl shadow-2xl p-6 mb-2 border border-blue-100 w-80 animate-slide-up">
           <div className="flex justify-between items-center mb-4">
