@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const aiService = require('../services/aiService');
 const auth = require('../middleware/authMiddleware');
+const checkUsageLimit = require('../middleware/usageMiddleware');
 const Consultation = require('../models/Consultation');
 const Prescription = require('../models/Prescription');
 const LabReport = require('../models/LabReport');
@@ -11,7 +12,7 @@ const User = require('../models/User');
 
 // POST /api/ai/analyze
 // Desc: Analyze symptoms
-router.post('/analyze', auth, async (req, res, next) => {
+router.post('/analyze', auth, checkUsageLimit('consultation'), async (req, res, next) => {
     try {
         const { text, language } = req.body;
 
@@ -38,6 +39,9 @@ router.post('/analyze', auth, async (req, res, next) => {
         `;
 
         const { data, usage } = await aiService.generateGeminiContent(prompt, "gemini-flash-latest");
+
+        // Increment Usage
+        if (req.incrementUsage) await req.incrementUsage();
 
         // Save to Database
         const newConsultation = new Consultation({
@@ -66,7 +70,7 @@ router.post('/analyze', auth, async (req, res, next) => {
 
 // POST /api/ai/analyze-prescription
 // Desc: Analyze prescription image using Vision model
-router.post('/analyze-prescription', auth, async (req, res, next) => {
+router.post('/analyze-prescription', auth, checkUsageLimit('ocr'), async (req, res, next) => {
     try {
         const { image } = req.body; // Base64 image string
 
@@ -86,6 +90,9 @@ router.post('/analyze-prescription', auth, async (req, res, next) => {
         `;
 
         const data = await aiService.generateOpenAIVisionContent(prompt, image);
+
+        // Increment Usage
+        if (req.incrementUsage) await req.incrementUsage();
 
         // Save to Database
         const newPrescription = new Prescription({
@@ -135,7 +142,7 @@ router.post('/summerizer', auth, async (req, res, next) => {
 
 // POST /api/ai/analyze-lab-report
 // Desc: Analyze lab report image/PDF using Gemini
-router.post('/analyze-lab-report', auth, async (req, res, next) => {
+router.post('/analyze-lab-report', auth, checkUsageLimit('ocr'), async (req, res, next) => {
     try {
         const { image, notes, reportDate: userDate, testType: userTestType } = req.body;
 

@@ -26,6 +26,19 @@ interface User {
     email?: string;
     _id?: string;
   }[];
+  subscription?: {
+    plan: 'free' | 'premium';
+    status: 'active' | 'inactive' | 'canceled' | 'past_due';
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string;
+    startDate?: string;
+    endDate?: string;
+  };
+  usage?: {
+    aiConsultations: number;
+    ocrScans: number;
+    lastResetDate?: string;
+  };
 }
 
 interface AuthState {

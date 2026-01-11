@@ -16,6 +16,7 @@
     "nodemailer": "^7.0.12",
     "openai": "^6.15.0",
     "rss-parser": "^3.13.0",
+    "stripe": "^20.1.2",
     "twilio": "^5.11.2"
   },
   "name": "server",

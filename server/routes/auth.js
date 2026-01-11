@@ -63,7 +63,9 @@ router.post("/verify-otp", async (req, res) => {
       email: user.email,
       age: user.age,
       type: user.type, // Include role in response
-      profileImage: user.profileImage
+      profileImage: user.profileImage,
+      subscription: user.subscription,
+      usage: user.usage
     };
 
     res.status(200).json({ message: "Verification successful", token, user: userData });
@@ -93,7 +95,9 @@ router.post("/login", async (req, res) => {
       email: user.email,
       age: user.age,
       type: user.type, // Include role in response
-      profileImage: user.profileImage
+      profileImage: user.profileImage,
+      subscription: user.subscription,
+      usage: user.usage
     };
 
     res.status(200).json({ message: "Login successful", token, user: userData });
@@ -158,7 +162,9 @@ router.get("/profile", authMiddleware, async (req, res) => {
       type: user.type,
       profileImage: user.profileImage,
       sosContacts: user.sosContacts || [],
-      profile: user.profile || {}
+      profile: user.profile || {},
+      subscription: user.subscription,
+      usage: user.usage
     };
 
     res.status(200).json({ user: userData });
@@ -208,7 +214,9 @@ router.put("/profile", authMiddleware, async (req, res) => {
       age: user.age,
       profileImage: user.profileImage,
       sosContacts: user.sosContacts,
-      profile: user.profile
+      profile: user.profile,
+      subscription: user.subscription,
+      usage: user.usage
     };
 
     res.status(200).json({ message: "Profile updated successfully", user: userData });
@@ -254,8 +262,12 @@ router.post("/profile/photo", authMiddleware, upload.single('photo'), async (req
       name: user.name,
       email: user.email,
       age: user.age,
+      type: user.type,
       profileImage: user.profileImage,
-      profile: user.profile
+      sosContacts: user.sosContacts,
+      profile: user.profile,
+      subscription: user.subscription,
+      usage: user.usage
     };
 
     res.status(200).json({ message: "Photo uploaded successfully", user: userData });

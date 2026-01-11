@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FaHome, FaHeartbeat, FaBookMedical, FaFileMedical, FaUserMd, FaSignOutAlt, FaMicrophone, FaCamera, FaUser, FaLightbulb, FaCalendarAlt, FaUsers, FaBell, FaHistory } from 'react-icons/fa';
+import { FaHome, FaHeartbeat, FaBookMedical, FaFileMedical, FaUserMd, FaSignOutAlt, FaMicrophone, FaCamera, FaUser, FaLightbulb, FaCalendarAlt, FaUsers, FaBell, FaHistory, FaStar } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { logoutUser } from '@/store/slices/authSlice';
@@ -87,6 +87,62 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                 </nav>
 
                 <div className="p-4 border-t border-gray-100 space-y-2">
+                    {/* Subscription Status Badge */}
+                    <div className={`rounded-xl p-4 mb-2 ${user?.subscription?.plan === 'premium'
+                        ? 'bg-gradient-to-r from-yellow-100 to-amber-100 border border-yellow-200'
+                        : 'bg-gray-50 border border-gray-200'
+                        }`}>
+                        <div className="flex items-center justify-between mb-2">
+                            <span className={`text-xs font-bold uppercase tracking-wider ${user?.subscription?.plan === 'premium' ? 'text-amber-700' : 'text-gray-500'
+                                }`}>
+                                {user?.subscription?.plan === 'premium' ? 'Premium Plan' : 'Free Plan'}
+                            </span>
+                            {user?.subscription?.plan === 'premium' && <FaStar className="text-amber-500" />}
+                        </div>
+
+                        {user?.subscription?.plan !== 'premium' && (
+                            <div className="space-y-3">
+                                <div>
+                                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                        <span>Consultations</span>
+                                        <span>{user?.usage?.aiConsultations || 0}/5</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                                        <div
+                                            className="bg-blue-500 h-1.5 rounded-full transition-all duration-500"
+                                            style={{ width: `${Math.min(((user?.usage?.aiConsultations || 0) / 5) * 100, 100)}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                        <span>Scans</span>
+                                        <span>{user?.usage?.ocrScans || 0}/5</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                                        <div
+                                            className="bg-purple-500 h-1.5 rounded-full transition-all duration-500"
+                                            style={{ width: `${Math.min(((user?.usage?.ocrScans || 0) / 5) * 100, 100)}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+                                <Link
+                                    href="/pricing"
+                                    onClick={onClose}
+                                    className="block w-full text-center bg-gray-900 text-white text-xs font-bold py-2 rounded-lg hover:bg-black transition-colors"
+                                >
+                                    Upgrade to Premium
+                                </Link>
+                            </div>
+                        )}
+
+                        {user?.subscription?.plan === 'premium' && (
+                            <p className="text-xs text-amber-800 font-medium">
+                                Unlimited Access Unlocked
+                            </p>
+                        )}
+                    </div>
+
                     <div className="flex items-center justify-between px-4 py-2 bg-gray-50 rounded-lg">
                         <span className="text-xs font-bold text-gray-500 uppercase">Settings & Accessibility</span>
                     </div>

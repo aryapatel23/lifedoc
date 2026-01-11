@@ -27,7 +27,13 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // Increase payload limit to 50mb
-app.use(express.json({ limit: '50mb' }));
+// Increase payload limit to 50mb and preserve raw body for Stripe
+app.use(express.json({
+  limit: '50mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors());
 app.use(compression()); // Enable Gzip/Brotli compression
@@ -60,7 +66,9 @@ console.log("Loading SOS Routes...");
 app.use("/api/sos", require("./routes/sos")); // <--- SOS Feature
 app.use("/api/doctor-verification", require("./routes/doctorVerification"));
 app.use("/api/consultation", require("./routes/consultation"));
+app.use("/api/consultation", require("./routes/consultation"));
 app.use("/api/meetings", require("./routes/meetings"));
+app.use("/api/subscription", require("./routes/subscription"));
 
 
 

@@ -5,12 +5,20 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 import { FaCamera, FaUpload, FaSpinner, FaPrescriptionBottleAlt, FaVolumeUp } from 'react-icons/fa';
+import { fetchUserProfile } from '@/store/slices/authSlice';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '@/store/store';
+
+import PricingModal from '@/components/PricingModal';
 
 export default function PrescriptionScannerPage() {
     const [image, setImage] = useState<string | null>(null);
     const [analyzing, setAnalyzing] = useState(false);
     const [result, setResult] = useState<any>(null);
+    const [showPricingModal, setShowPricingModal] = useState(false);
+    const [limitMessage, setLimitMessage] = useState('');
     const { token } = useSelector((state: RootState) => state.auth);
+    const dispatch = useDispatch<AppDispatch>();
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -38,11 +46,24 @@ export default function PrescriptionScannerPage() {
                 body: JSON.stringify({ image })
             });
             const data = await response.json();
+
+            if (!response.ok) {
+                if (response.status === 403 && data.isLimitReached) {
+                    setLimitMessage(data.message);
+                    setShowPricingModal(true);
+                    setResult({ isLimitError: true, message: data.message });
+                    return;
+                }
+                throw new Error(data.message || 'Analysis failed');
+            }
+
             setResult(data);
 
             // Auto-speak the summary
             if (data.audioSummary) {
                 speak(data.audioSummary);
+                // Refresh user profile to update usage stats in Sidebar
+                dispatch(fetchUserProfile());
             }
         } catch (error) {
             console.error(error);
@@ -60,6 +81,12 @@ export default function PrescriptionScannerPage() {
     return (
         <ProtectedRoute>
             <DashboardLayout>
+                <PricingModal
+                    isOpen={showPricingModal}
+                    onClose={() => setShowPricingModal(false)}
+                    message={limitMessage}
+                />
+
                 <header className="mb-10 text-center">
                     <h1 className="text-4xl font-extrabold text-gray-800 mb-2">Prescription Scanner</h1>
                     <p className="text-gray-500 text-lg">Upload or take a photo of your doctor's prescription.</p>
@@ -125,38 +152,47 @@ export default function PrescriptionScannerPage() {
                             </div>
                         ) : (
                             <div className="space-y-6">
-                                <div className="bg-blue-50 p-6 rounded-2xl relative">
-                                    <button
-                                        onClick={() => speak(result.audioSummary)}
-                                        className="absolute top-4 right-4 p-2 bg-white text-blue-600 rounded-full shadow-sm hover:bg-blue-100"
-                                    >
-                                        <FaVolumeUp />
-                                    </button>
-                                    <h3 className="font-bold text-blue-800 mb-2 uppercase text-xs tracking-wider">Summary</h3>
-                                    <p className="text-blue-900 text-lg leading-relaxed">{result.audioSummary}</p>
-                                </div>
-
-                                <div>
-                                    <h3 className="font-bold text-gray-800 mb-4">Medicines Identified</h3>
-                                    <div className="space-y-3">
-                                        {result.medicines?.map((med: any, idx: number) => (
-                                            <div key={idx} className="flex items-start p-4 bg-gray-50 rounded-xl">
-                                                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-4 text-green-600 flex-shrink-0 font-bold">
-                                                    {idx + 1}
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold text-gray-900 text-lg">{med.name}</p>
-                                                    <p className="text-gray-600">{med.dosage} • {med.timing}</p>
-                                                    <p className="text-sm text-amber-600 mt-1 font-medium">⚠️ {med.precaution}</p>
-                                                </div>
-                                            </div>
-                                        ))}
+                                {result.isLimitError ? (
+                                    <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-2xl text-center">
+                                        <h3 className="text-xl font-bold text-yellow-800 mb-2">Daily Limit Reached</h3>
+                                        <p className="text-yellow-700 mb-6">{result.message || "Upgrade to scan more prescriptions."}</p>
+                                        <button onClick={() => setShowPricingModal(true)} className="bg-yellow-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-yellow-700">Upgrade Now</button>
                                     </div>
-                                </div>
+                                ) : (
+                                    <>
+                                        <div className="bg-blue-50 p-6 rounded-2xl relative">
+                                            <button
+                                                onClick={() => speak(result.audioSummary)}
+                                                className="absolute top-4 right-4 p-2 bg-white text-blue-600 rounded-full shadow-sm hover:bg-blue-100"
+                                            >
+                                                <FaVolumeUp />
+                                            </button>
+                                            <h3 className="font-bold text-blue-800 mb-2 uppercase text-xs tracking-wider">Summary</h3>
+                                            <p className="text-blue-900 text-lg leading-relaxed">{result.audioSummary}</p>
+                                        </div>
+
+                                        <div>
+                                            <h3 className="font-bold text-gray-800 mb-4">Medicines Identified</h3>
+                                            <div className="space-y-3">
+                                                {result.medicines?.map((med: any, idx: number) => (
+                                                    <div key={idx} className="flex items-start p-4 bg-gray-50 rounded-xl">
+                                                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-4 text-green-600 flex-shrink-0 font-bold">
+                                                            {idx + 1}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-bold text-gray-900 text-lg">{med.name}</p>
+                                                            <p className="text-gray-600">{med.dosage} • {med.timing}</p>
+                                                            <p className="text-sm text-amber-600 mt-1 font-medium">⚠️ {med.precaution}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>
-
                 </div>
             </DashboardLayout>
         </ProtectedRoute>

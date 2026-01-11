@@ -3,17 +3,21 @@ import 'regenerator-runtime/runtime';
 import { useState, useEffect } from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import DashboardLayout from '@/components/DashboardLayout';
+import PricingModal from '@/components/PricingModal';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import { FaMicrophone, FaStop, FaRobot, FaVolumeUp, FaLanguage, FaFileUpload } from 'react-icons/fa';
+import { fetchUserProfile } from '@/store/slices/authSlice';
 import ReactMarkdown from 'react-markdown';
 
 export default function ConsultationPage() {
     const [isClient, setIsClient] = useState(false);
     const [analyzing, setAnalyzing] = useState(false);
-    const [aiResult, setAiResult] = useState<any | null>(null); // Changed to object
+    const [aiResult, setAiResult] = useState<any | null>(null);
     const [language, setLanguage] = useState<'en' | 'hi' | 'gu'>('en');
+    const [showPricingModal, setShowPricingModal] = useState(false);
+    const [limitMessage, setLimitMessage] = useState('');
 
     const dispatch = useDispatch<AppDispatch>();
     const { token } = useSelector((state: RootState) => state.auth);
@@ -69,9 +73,26 @@ export default function ConsultationPage() {
 
             const data = await response.json();
 
+            if (!response.ok) {
+                if (response.status === 403 && data.isLimitReached) {
+                    setLimitMessage(data.message);
+                    setShowPricingModal(true);
+                    setAiResult({
+                        summary: "You have reached your free monthly limit for AI consultations.",
+                        urgency: "Limit Reached",
+                        isLimitError: true, // Custom flag for UI
+                        upgradeUrl: '/pricing'
+                    });
+                    return;
+                }
+                throw new Error(data.message || 'Analysis failed');
+            }
+
             if (data.summary) {
                 setAiResult(data);
                 speakResponse(data.summary);
+                // Refresh user profile to update usage stats in Sidebar
+                dispatch(fetchUserProfile());
             } else {
                 setAiResult({ summary: "I'm sorry, I couldn't understand that. Could you please try again?" });
             }
@@ -106,6 +127,12 @@ export default function ConsultationPage() {
     return (
         <ProtectedRoute>
             <DashboardLayout>
+                <PricingModal
+                    isOpen={showPricingModal}
+                    onClose={() => setShowPricingModal(false)}
+                    message={limitMessage}
+                />
+
                 <div className="flex flex-col items-center justify-center min-h-[85vh] relative overflow-hidden w-full">
                     {/* Background Blobs for specific immersive feel */}
                     <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#7A8E6B]/5 rounded-full blur-3xl pointer-events-none -mr-32 -mt-32"></div>
@@ -210,7 +237,21 @@ export default function ConsultationPage() {
                                                     <p className="text-lg text-gray-800 leading-relaxed font-medium">
                                                         {aiResult?.summary}
                                                     </p>
-                                                    {aiResult?.summary && (
+                                                    {aiResult?.isLimitError && (
+                                                        <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+                                                            <h4 className="font-bold text-yellow-800 mb-2">Upgrade to Premium</h4>
+                                                            <p className="text-yellow-700 text-sm mb-4">
+                                                                Unlock unlimited AI consultations and advanced health features.
+                                                            </p>
+                                                            <button
+                                                                onClick={() => setShowPricingModal(true)}
+                                                                className="inline-block bg-yellow-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-yellow-700 transition"
+                                                            >
+                                                                View Plans
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                    {aiResult?.summary && !aiResult?.isLimitError && (
                                                         <button
                                                             onClick={() => speakResponse(aiResult.summary)}
                                                             className="mt-2 text-sm font-bold text-[#7A8E6B] hover:text-[#5D6F51] transition-colors flex items-center"
@@ -274,7 +315,7 @@ export default function ConsultationPage() {
                                                             <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
                                                                 <div className="flex items-center gap-2 mb-2">
                                                                     <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs">
-                                                                        <FaRobot /> {/* Should actually be FaUserMd but avoiding import mess for now */}
+                                                                        <FaRobot />
                                                                     </div>
                                                                     <h4 className="font-bold text-purple-900">Verified by Doctor</h4>
                                                                 </div>
@@ -312,4 +353,3 @@ export default function ConsultationPage() {
         </ProtectedRoute>
     );
 }
-      

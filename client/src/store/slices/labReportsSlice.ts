@@ -72,10 +72,12 @@ export const analyzeLabReport = createAsyncThunk(
             });
             return response.data;
         } catch (error: any) {
-            return rejectWithValue(error.response?.data?.message || 'Failed to analyze lab report');
+            return rejectWithValue(error.response?.data || { message: 'Failed to analyze lab report' });
         }
     }
 );
+
+
 
 export const deleteLabReport = createAsyncThunk(
     'labReports/delete',
@@ -148,19 +150,12 @@ const labReportsSlice = createSlice({
             })
             .addCase(analyzeLabReport.fulfilled, (state, action) => {
                 state.loading = false;
-                // If the analysis returns a report object, we can set it as current, 
-                // but usually we might want to redirect or just show success. 
-                // The current implementation in NewLabReportPage redirects to list.
-                // But if we want to show it immediately, we can set it.
-                // However, the payload structure from analyzeLabReport is { message, data, aiAnalysis }.
-                // So we should probably set state.currentReport = action.payload.data;
-                // But let's check the thunk return type. It returns response.data.
             })
             .addCase(analyzeLabReport.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload as string;
+                const payload = action.payload as any;
+                state.error = payload?.message || 'Failed to analyze lab report';
             })
-
             // Delete Lab Report
             .addCase(deleteLabReport.pending, (state) => {
                 state.loading = true;
