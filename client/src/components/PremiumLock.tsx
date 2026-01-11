@@ -11,7 +11,7 @@ interface PremiumLockProps {
 
 export default function PremiumLock({ children, title = "Premium Feature", description = "Unlock this feature with LifeDoc Premium" }: PremiumLockProps) {
     const { user } = useSelector((state: RootState) => state.auth);
-    const isPremium = user?.subscription?.plan === 'premium' && user?.subscription?.status === 'active';
+    const isPremium = ['plus', 'premium', 'family'].includes(user?.subscription?.plan || '') && user?.subscription?.status === 'active';
 
     if (isPremium) {
         return <>{children}</>;

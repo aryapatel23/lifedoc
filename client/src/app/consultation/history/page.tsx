@@ -8,7 +8,7 @@ import axios from 'axios';
 import { FaHistory, FaRobot, FaUserMd, FaChevronRight, FaCalendarAlt } from 'react-icons/fa';
 
 export default function ConsultationHistoryPage() {
-    const { token } = useSelector((state: RootState) => state.auth);
+    const { token, user } = useSelector((state: RootState) => state.auth);
     const [consultations, setConsultations] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedConsultation, setSelectedConsultation] = useState<any | null>(null);
@@ -33,6 +33,11 @@ export default function ConsultationHistoryPage() {
         }
     };
 
+    // Filter Logic for Free Tier
+    const isPremium = user?.subscription?.plan === 'premium';
+    const displayedConsultations = isPremium ? consultations : consultations.slice(0, 3);
+    const hiddenCount = consultations.length - displayedConsultations.length;
+
     return (
         <ProtectedRoute>
             <DashboardLayout>
@@ -48,10 +53,11 @@ export default function ConsultationHistoryPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* List Column */}
                         <div className="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-[700px]">
-                            <div className="p-4 bg-gray-50 border-b border-gray-100 font-bold text-gray-700">
-                                Recent Consultations
+                            <div className="p-4 bg-gray-50 border-b border-gray-100 font-bold text-gray-700 flex justify-between items-center">
+                                <span>Recent Consultations</span>
+                                {!isPremium && <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full border border-amber-100">Free Limit: 3 Recent</span>}
                             </div>
-                            <div className="overflow-y-auto flex-1 p-2 space-y-2">
+                            <div className="overflow-y-auto flex-1 p-2 space-y-2 relative">
                                 {loading ? (
                                     <div className="p-4 text-center text-gray-400">Loading history...</div>
                                 ) : consultations.length === 0 ? (
@@ -60,35 +66,48 @@ export default function ConsultationHistoryPage() {
                                         <a href="/consultation" className="text-[#7A8E6B] font-bold mt-2 block hover:underline">Start a new one</a>
                                     </div>
                                 ) : (
-                                    consultations.map((item) => (
-                                        <div
-                                            key={item._id}
-                                            onClick={() => setSelectedConsultation(item)}
-                                            className={`p-4 rounded-xl cursor-pointer transition-all border ${selectedConsultation?._id === item._id
-                                                ? 'bg-[#7A8E6B]/10 border-[#7A8E6B] shadow-md'
-                                                : 'bg-white border-gray-100 hover:border-[#7A8E6B]/50 hover:bg-gray-50'
-                                                }`}
-                                        >
-                                            <div className="flex justify-between items-start mb-2">
-                                                <span className="text-xs font-bold text-gray-400 flex items-center gap-1">
-                                                    <FaCalendarAlt /> {new Date(item.date).toLocaleDateString()}
-                                                </span>
-                                                {item.reviewStatus === 'reviewed' && (
-                                                    <span className="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                                                        <FaUserMd /> Verified
+                                    <>
+                                        {displayedConsultations.map((item) => (
+                                            <div
+                                                key={item._id}
+                                                onClick={() => setSelectedConsultation(item)}
+                                                className={`p-4 rounded-xl cursor-pointer transition-all border ${selectedConsultation?._id === item._id
+                                                    ? 'bg-[#7A8E6B]/10 border-[#7A8E6B] shadow-md'
+                                                    : 'bg-white border-gray-100 hover:border-[#7A8E6B]/50 hover:bg-gray-50'
+                                                    }`}
+                                            >
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <span className="text-xs font-bold text-gray-400 flex items-center gap-1">
+                                                        <FaCalendarAlt /> {new Date(item.date).toLocaleDateString()}
                                                     </span>
-                                                )}
-                                                {item.reviewStatus === 'pending' && (
-                                                    <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                                        Pending
-                                                    </span>
-                                                )}
+                                                    {item.reviewStatus === 'reviewed' && (
+                                                        <span className="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                                            <FaUserMd /> Verified
+                                                        </span>
+                                                    )}
+                                                    {item.reviewStatus === 'pending' && (
+                                                        <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                                            Pending
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-sm font-medium text-gray-800 line-clamp-2 italic">
+                                                    "{item.symptoms}"
+                                                </p>
                                             </div>
-                                            <p className="text-sm font-medium text-gray-800 line-clamp-2 italic">
-                                                "{item.symptoms}"
-                                            </p>
-                                        </div>
-                                    ))
+                                        ))
+                                        }
+
+                                        {!isPremium && hiddenCount > 0 && (
+                                            <div className="p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl text-center text-white mt-4 mx-2">
+                                                <p className="text-sm font-bold mb-1">{hiddenCount} Older Consultations Hidden</p>
+                                                <p className="text-xs text-gray-400 mb-3">Upgrade to Premium to access your full medical history.</p>
+                                                <a href="/pricing" className="block w-full bg-white text-gray-900 text-xs font-bold py-2 rounded-lg hover:bg-gray-100 transition-colors">
+                                                    Unlock Full History
+                                                </a>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>

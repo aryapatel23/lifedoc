@@ -27,7 +27,7 @@ interface User {
     _id?: string;
   }[];
   subscription?: {
-    plan: 'free' | 'premium';
+    plan: 'free' | 'plus' | 'premium' | 'family';
     status: 'active' | 'inactive' | 'canceled' | 'past_due';
     stripeCustomerId?: string;
     stripeSubscriptionId?: string;

@@ -1,5 +1,6 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const User = require('../models/User');
+const Payment = require('../models/Payment');
 
 exports.createCheckoutSession = async (req, res) => {
     try {
@@ -18,6 +19,19 @@ exports.createCheckoutSession = async (req, res) => {
             await user.save();
         }
 
+        const { plan } = req.body;
+
+        let unitAmount = 999; // Default Premium
+        let planName = 'LifeDoc Premium';
+
+        if (plan === 'plus') {
+            unitAmount = 499;
+            planName = 'LifeDoc Plus';
+        } else if (plan === 'family') {
+            unitAmount = 1999;
+            planName = 'LifeDoc Family';
+        }
+
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             mode: 'subscription',
@@ -27,10 +41,10 @@ exports.createCheckoutSession = async (req, res) => {
                     price_data: {
                         currency: 'usd',
                         product_data: {
-                            name: 'LifeDoc Premium',
-                            description: 'Unlimited AI Consultations & Advanced Health Analytics',
+                            name: planName,
+                            description: 'Advanced Health Analytics & Priority Access',
                         },
-                        unit_amount: 999, // $9.99/month
+                        unit_amount: unitAmount,
                         recurring: {
                             interval: 'month',
                         },
@@ -39,9 +53,10 @@ exports.createCheckoutSession = async (req, res) => {
                 },
             ],
             success_url: `${process.env.CLIENT_URL || 'http://localhost:3000'}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.CLIENT_URL || 'http://localhost:3000'}/pricing`,
+            cancel_url: `${process.env.CLIENT_URL || 'http://localhost:3000'}/payment/cancel`,
             metadata: {
-                userId: user.id
+                userId: user.id,
+                plan: plan || 'premium'
             }
         });
 
@@ -69,35 +84,64 @@ exports.handleWebhook = async (req, res) => {
             const userId = session.metadata.userId;
 
             await User.findByIdAndUpdate(userId, {
-                'subscription.plan': 'premium',
+                'subscription.plan': session.metadata.plan || 'premium',
                 'subscription.status': 'active',
                 'subscription.stripeSubscriptionId': session.subscription,
                 'subscription.startDate': new Date(),
-                'subscription.endDate': new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Rough Estimate, webhook 'invoice.payment_succeeded' is better for recurring
+                'subscription.endDate': new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
             });
         }
 
-        // Handle recurring payments
+        // Handle recurring payments & Record History
         if (event.type === 'invoice.payment_succeeded') {
             const invoice = event.data.object;
             const customerId = invoice.customer;
             const user = await User.findOne({ 'subscription.stripeCustomerId': customerId });
 
             if (user) {
+                // Update User Subscription
                 user.subscription.status = 'active';
                 user.subscription.endDate = new Date(invoice.lines.data[0].period.end * 1000);
                 await user.save();
+
+                // Store Payment Record
+                await Payment.create({
+                    userId: user._id,
+                    stripeCustomerId: customerId,
+                    stripeInvoiceId: invoice.id,
+                    stripePaymentIntentId: invoice.payment_intent,
+                    amount: invoice.amount_paid,
+                    currency: invoice.currency,
+                    status: 'succeeded',
+                    description: 'Premium Subscription Renewal',
+                    paymentDate: new Date(invoice.created * 1000)
+                });
             }
         }
 
-        // Handle payment failure
+        // Handle payment failure & Record History
         if (event.type === 'invoice.payment_failed') {
             const invoice = event.data.object;
             const customerId = invoice.customer;
-            await User.findOneAndUpdate(
-                { 'subscription.stripeCustomerId': customerId },
-                { 'subscription.status': 'past_due' }
-            );
+            const user = await User.findOne({ 'subscription.stripeCustomerId': customerId });
+
+            if (user) {
+                user.subscription.status = 'past_due';
+                await user.save();
+
+                // Store Failed Payment Record
+                await Payment.create({
+                    userId: user._id,
+                    stripeCustomerId: customerId,
+                    stripeInvoiceId: invoice.id,
+                    stripePaymentIntentId: invoice.payment_intent,
+                    amount: invoice.amount_due,
+                    currency: invoice.currency,
+                    status: 'failed',
+                    description: 'Subscription Payment Failed',
+                    paymentDate: new Date(invoice.created * 1000)
+                });
+            }
         }
 
         res.json({ received: true });

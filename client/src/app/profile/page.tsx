@@ -6,7 +6,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import { updateUserProfile, uploadProfilePhoto, fetchUserProfile } from '@/store/slices/authSlice';
-import { FaUser, FaEnvelope, FaBirthdayCake, FaIdCard, FaEdit, FaTimes, FaSave, FaCamera, FaStethoscope, FaCheck, FaChevronRight, FaBookmark, FaShareAlt, FaUserMd, FaCog, FaStar } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaBirthdayCake, FaIdCard, FaEdit, FaTimes, FaSave, FaCamera, FaStethoscope, FaCheck, FaChevronRight, FaBookmark, FaShareAlt, FaUserMd, FaCog, FaCrown } from 'react-icons/fa';
 import axios from 'axios';
 import Link from 'next/link';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -420,34 +420,109 @@ export default function Profile() {
 
                         {/* Details Grid */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            {/* Personal Information */}
-                            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow h-full">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                        <FaIdCard className="text-[#7A8E6B]" />
-                                        Personal Information
-                                    </h3>
-                                    <button
-                                        onClick={() => setEditSection('personal')}
-                                        className="text-gray-400 hover:text-[#7A8E6B] transition-colors"
-                                    >
-                                        <FaEdit />
-                                    </button>
+                            <div className="flex flex-col gap-8 h-full">
+                                {/* Personal Information */}
+                                <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                            <FaIdCard className="text-[#7A8E6B]" />
+                                            Personal Information
+                                        </h3>
+                                        <button
+                                            onClick={() => setEditSection('personal')}
+                                            className="text-gray-400 hover:text-[#7A8E6B] transition-colors"
+                                        >
+                                            <FaEdit />
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100/50 hover:bg-gray-50 transition-colors">
+                                            <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Full Name</p>
+                                            <p className="text-gray-900 font-medium">{user?.name || '--'}</p>
+                                        </div>
+                                        <div className="p-4 bg-gray-50 rounded-xl">
+                                            <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Email Address</p>
+                                            <p className="text-gray-900 font-medium">{user?.email || '--'}</p>
+                                        </div>
+                                        <div className="p-4 bg-gray-50 rounded-xl">
+                                            <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Account ID</p>
+                                            <p className="text-gray-900 font-medium font-mono text-sm">{user?.id || '--'}</p>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <div className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100/50 hover:bg-gray-50 transition-colors">
-                                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Full Name</p>
-                                        <p className="text-gray-900 font-medium">{user?.name || '--'}</p>
+                                {/* Subscription Plan Card */}
+                                <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                            <FaCrown className="text-amber-500" />
+                                            Current Plan
+                                        </h3>
+                                        {(['plus', 'premium', 'family'].includes(user?.subscription?.plan || '') && user?.subscription?.status === 'active') ? (
+                                            <span className="bg-amber-100 text-amber-600 text-xs font-bold px-2 py-1 rounded-full uppercase">
+                                                Active
+                                            </span>
+                                        ) : (
+                                            <Link href="/pricing" className="text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline">
+                                                Compare Plans
+                                            </Link>
+                                        )}
                                     </div>
-                                    <div className="p-4 bg-gray-50 rounded-xl">
-                                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Email Address</p>
-                                        <p className="text-gray-900 font-medium">{user?.email || '--'}</p>
+
+                                    <div className={`p-4 rounded-xl ${['plus', 'premium', 'family'].includes(user?.subscription?.plan || '') ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50 border border-gray-100'}`}>
+                                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Membership Tier</p>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <p className={`font-bold capitalize text-lg ${['plus', 'premium', 'family'].includes(user?.subscription?.plan || '') ? 'text-amber-700' : 'text-gray-900'}`}>
+                                                {user?.subscription?.plan === 'premium' ? 'LifeDoc Pro' :
+                                                    user?.subscription?.plan === 'plus' ? 'LifeDoc Plus' :
+                                                        user?.subscription?.plan === 'family' ? 'LifeDoc Family' : 'Free Plan'}
+                                            </p>
+
+                                            {(!['plus', 'premium', 'family'].includes(user?.subscription?.plan || '') || user?.subscription?.status !== 'active') && (
+                                                <Link href="/pricing" className="text-xs bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-black transition-colors shadow-lg font-bold">
+                                                    Upgrade
+                                                </Link>
+                                            )}
+                                        </div>
+
+                                        {['free', 'plus'].includes(user?.subscription?.plan || 'free') && (
+                                            <div className="space-y-4 pt-2">
+                                                <div className="grid grid-cols-1 gap-4">
+                                                    <div>
+                                                        <div className="flex justify-between text-[10px] text-gray-500 mb-1">
+                                                            <span>Consultations Used</span>
+                                                            <span>{user?.usage?.aiConsultations || 0}/{user?.subscription?.plan === 'plus' ? 20 : 5}</span>
+                                                        </div>
+                                                        <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                                                            <div
+                                                                className="bg-blue-500 h-1.5 rounded-full transition-all duration-500"
+                                                                style={{ width: `${Math.min(((user?.usage?.aiConsultations || 0) / (user?.subscription?.plan === 'plus' ? 20 : 5)) * 100, 100)}%` }}
+                                                            ></div>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="flex justify-between text-[10px] text-gray-500 mb-1">
+                                                            <span>Scans Used</span>
+                                                            <span>{user?.usage?.ocrScans || 0}/{user?.subscription?.plan === 'plus' ? 20 : 5}</span>
+                                                        </div>
+                                                        <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                                                            <div
+                                                                className="bg-purple-500 h-1.5 rounded-full transition-all duration-500"
+                                                                style={{ width: `${Math.min(((user?.usage?.ocrScans || 0) / (user?.subscription?.plan === 'plus' ? 20 : 5)) * 100, 100)}%` }}
+                                                            ></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="p-4 bg-gray-50 rounded-xl">
-                                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Account ID</p>
-                                        <p className="text-gray-900 font-medium font-mono text-sm">{user?.id || '--'}</p>
-                                    </div>
+
+                                    {(['plus', 'premium', 'family'].includes(user?.subscription?.plan || '') && user?.subscription?.status === 'active') && (
+                                        <div className="mt-4 pt-4 border-t border-gray-100 text-center">
+                                            <p className="text-xs text-gray-400">Renews on {new Date(user?.subscription?.endDate || Date.now()).toLocaleDateString()}</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -607,73 +682,7 @@ export default function Profile() {
 
 
 
-                        {/* Subscription Plan Section */}
-                        <div className="mt-8 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                            <div className="flex items-center gap-2 mb-6">
-                                <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center text-amber-500">
-                                    <FaStar />
-                                </div>
-                                <h3 className="text-lg font-bold text-gray-800">Subscription Plan</h3>
-                            </div>
 
-                            <div className={`rounded-xl p-6 ${user?.subscription?.plan === 'premium'
-                                ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-100'
-                                : 'bg-gray-50 border border-gray-100'
-                                }`}>
-                                <div className="flex items-center justify-between mb-4">
-                                    <div>
-                                        <span className={`text-sm font-bold uppercase tracking-wider ${user?.subscription?.plan === 'premium' ? 'text-amber-700' : 'text-gray-500'
-                                            }`}>
-                                            {user?.subscription?.plan === 'premium' ? 'Premium Plan' : 'Free Plan'}
-                                        </span>
-                                        {user?.subscription?.plan === 'premium' && (
-                                            <p className="text-xs text-amber-600 font-medium mt-1">
-                                                Unlimited Access Unlocked
-                                            </p>
-                                        )}
-                                    </div>
-                                    {user?.subscription?.plan === 'premium' && <FaStar className="text-2xl text-amber-500" />}
-                                </div>
-
-                                {user?.subscription?.plan !== 'premium' && (
-                                    <div className="space-y-4">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <div>
-                                                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                                                    <span>Consultations Used</span>
-                                                    <span>{user?.usage?.aiConsultations || 0}/5</span>
-                                                </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                                    <div
-                                                        className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                                                        style={{ width: `${Math.min(((user?.usage?.aiConsultations || 0) / 5) * 100, 100)}%` }}
-                                                    ></div>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                                                    <span>Scans Used</span>
-                                                    <span>{user?.usage?.ocrScans || 0}/5</span>
-                                                </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                                    <div
-                                                        className="bg-purple-500 h-2 rounded-full transition-all duration-500"
-                                                        style={{ width: `${Math.min(((user?.usage?.ocrScans || 0) / 5) * 100, 100)}%` }}
-                                                    ></div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <Link
-                                            href="/pricing"
-                                            className="block w-full sm:w-auto sm:inline-block text-center bg-gray-900 text-white text-sm font-bold px-6 py-3 rounded-xl hover:bg-black transition-colors shadow-lg shadow-gray-200 mt-2"
-                                        >
-                                            Upgrade to Premium
-                                        </Link>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
 
                         {/* Settings Section */}
                         <div className="mt-8 bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300">

@@ -23,21 +23,23 @@ const checkUsageLimit = (feature) => {
                 await user.save();
             }
 
-            // 2. Premium Users have no limits
-            if (user.subscription.plan === 'premium' && user.subscription.status === 'active') {
+            // 2. Premium/Family Users have no limits
+            if (['premium', 'family'].includes(user.subscription.plan) && user.subscription.status === 'active') {
                 return next();
             }
 
-            // 3. Check specific feature limit
+            // 3. Set limits based on plan
             let currentUsage = 0;
-            let limit = 0;
+            let limit = 5; // Default Free Limit
+
+            if (user.subscription.plan === 'plus' && user.subscription.status === 'active') {
+                limit = 20; // Plus Limit
+            }
 
             if (feature === 'consultation') {
                 currentUsage = user.usage.aiConsultations;
-                limit = LIMITS.consultation;
             } else if (feature === 'ocr') {
                 currentUsage = user.usage.ocrScans;
-                limit = LIMITS.ocr;
             }
 
             if (currentUsage >= limit) {

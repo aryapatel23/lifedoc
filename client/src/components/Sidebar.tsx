@@ -60,7 +60,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
             />
 
             {/* Sidebar */}
-            <div className={`h-screen w-72 bg-white border-r border-gray-200 fixed left-0 top-0 z-50 flex flex-col font-sans transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'
+            <div className={`h-screen w-72 bg-white border-r ${['plus', 'premium', 'family'].includes(user?.subscription?.plan || '') ? 'border-amber-200' : 'border-gray-200'} fixed left-0 top-0 z-50 flex flex-col font-sans transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'
                 }`}>
                 <div className="p-8">
                     <h1 className="text-2xl font-extrabold flex items-center space-x-2 text-gray-900 tracking-tight">
@@ -90,7 +90,78 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                 </nav>
 
                 <div className="p-4 border-t border-gray-100 space-y-2">
+                    {/* Subscription Status Badge */}
+                    <div className={`rounded-xl p-4 mb-2 ${['plus', 'premium', 'family'].includes(user?.subscription?.plan || '')
+                        ? 'bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-100'
+                        : 'bg-gray-50 border border-gray-200'
+                        }`}>
+                        <div className="flex items-center justify-between mb-2">
+                            <span className={`text-xs font-bold uppercase tracking-wider ${['plus', 'premium', 'family'].includes(user?.subscription?.plan || '') ? 'text-amber-700' : 'text-gray-500'
+                                }`}>
+                                {user?.subscription?.plan === 'premium' ? 'LifeDoc Pro' :
+                                    user?.subscription?.plan === 'plus' ? 'LifeDoc Plus' :
+                                        user?.subscription?.plan === 'family' ? 'LifeDoc Family' : 'Free Plan'}
+                            </span>
+                            {['plus', 'premium', 'family'].includes(user?.subscription?.plan || '') && <FaStar className="text-amber-500" />}
+                        </div>
 
+                        {['free', 'plus'].includes(user?.subscription?.plan || 'free') && user?.subscription?.status !== 'inactive' ? (
+                            <div className="space-y-3">
+                                {['plus', 'premium', 'family'].includes(user?.subscription?.plan || '') && user?.subscription?.status === 'active' && (
+                                    <p className="text-[10px] text-amber-600 font-bold mb-2">Member Special Benefits Active</p>
+                                )}
+                                <div>
+                                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                        <span>Consultations</span>
+                                        <span>{user?.usage?.aiConsultations || 0}/{user?.subscription?.plan === 'plus' ? 20 : 5}</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                                        <div
+                                            className="bg-blue-500 h-1.5 rounded-full transition-all duration-500"
+                                            style={{ width: `${Math.min(((user?.usage?.aiConsultations || 0) / (user?.subscription?.plan === 'plus' ? 20 : 5)) * 100, 100)}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                        <span>Scans</span>
+                                        <span>{user?.usage?.ocrScans || 0}/{user?.subscription?.plan === 'plus' ? 20 : 5}</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                                        <div
+                                            className="bg-purple-500 h-1.5 rounded-full transition-all duration-500"
+                                            style={{ width: `${Math.min(((user?.usage?.ocrScans || 0) / (user?.subscription?.plan === 'plus' ? 20 : 5)) * 100, 100)}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+                                {user?.subscription?.plan === 'plus' && (
+                                    <Link
+                                        href="/pricing"
+                                        onClick={onClose}
+                                        className="block w-full text-center bg-gray-900 text-white text-[10px] font-bold py-1.5 rounded-lg hover:bg-black transition-colors"
+                                    >
+                                        Upgrade to Pro
+                                    </Link>
+                                )}
+                                {user?.subscription?.plan === 'free' && (
+                                    <Link
+                                        href="/pricing"
+                                        onClick={onClose}
+                                        className="block w-full text-center bg-gray-900 text-white text-xs font-bold py-2 rounded-lg hover:bg-black transition-colors"
+                                    >
+                                        Upgrade to Premium
+                                    </Link>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-1">
+                                <p className="text-xs text-amber-800 font-bold flex items-center gap-1">
+                                    <FaStar className="text-[10px]" /> Unlimited Access
+                                </p>
+                                <p className="text-[10px] text-amber-600">Enjoy full health insights!</p>
+                            </div>
+                        )}
+                    </div>
 
                     <div className="flex items-center justify-between px-4 py-2 bg-gray-50 rounded-lg">
                         <span className="text-xs font-bold text-gray-500 uppercase">Settings & Accessibility</span>
