@@ -22,6 +22,11 @@ Complete reference for all API endpoints, authentication, request/response forma
   - [Medicine Reference](#medicine-reference-endpoints)
   - [Emergency SOS](#emergency-sos-endpoints)
   - [Doctor Verification](#doctor-verification-endpoints)
+  - [Doctors & Appointments](#doctors-and-appointments-endpoints)
+  - [Meeting Requests](#meeting-requests-endpoints)
+  - [Consultation Reviews](#consultation-reviews-endpoints)
+  - [Premium Subscriptions](#premium-subscriptions-endpoints)
+  - [Saved Posts](#saved-posts-endpoints)
   - [Admin](#admin-endpoints)
   - [News](#news-endpoints)
 
@@ -1256,6 +1261,712 @@ Base path: `/api/admin`
 
 ---
 
+## Doctors and Appointments Endpoints
+
+Base path: `/api/doctors` and `/api/appointments`  
+**Authentication:** ✅ Required
+
+### 1. Get All Doctors
+
+**Endpoint:** `GET /api/doctors`  
+**Authentication:** ✅ Required
+
+**Success Response:** `200 OK`
+```json
+{
+  "doctors": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "name": "Dr. Sarah Johnson",
+      "email": "sarah@hospital.com",
+      "specialty": "Cardiology",
+      "type": "doctor",
+      "isVerified": true,
+      "profile": {
+        "qualifications": "MD, MBBS",
+        "experience": "15 years",
+        "languages": ["English", "Hindi"]
+      },
+      "availability": {
+        "monday": ["09:00-12:00", "14:00-17:00"],
+        "tuesday": ["09:00-12:00", "14:00-17:00"],
+        "friday": ["09:00-13:00"]
+      }
+    }
+  ]
+}
+```
+
+---
+
+### 2. Get Doctor Details
+
+**Endpoint:** `GET /api/doctors/:id`  
+**Authentication:** ✅ Required
+
+**Success Response:** `200 OK`
+```json
+{
+  "id": "507f1f77bcf86cd799439011",
+  "name": "Dr. Sarah Johnson",
+  "email": "sarah@hospital.com",
+  "specialty": "Cardiology",
+  "profile": {
+    "qualifications": "MD, MBBS",
+    "experience": "15 years",
+    "bio": "Specialized in preventive cardiology..."
+  },
+  "availability": {...},
+  "rating": 4.8,
+  "totalAppointments": 450
+}
+```
+
+---
+
+### 3. Update Doctor Availability
+
+**Endpoint:** `PUT /api/doctors/availability`  
+**Authentication:** ✅ Required (Doctor role)
+
+**Request Body:**
+```json
+{
+  "availability": {
+    "monday": ["09:00-12:00", "14:00-17:00"],
+    "tuesday": ["09:00-12:00"],
+    "wednesday": ["14:00-18:00"],
+    "thursday": ["09:00-12:00", "14:00-17:00"],
+    "friday": ["09:00-13:00"]
+  }
+}
+```
+
+**Success Response:** `200 OK`
+```json
+{
+  "message": "Availability updated successfully",
+  "availability": {...}
+}
+```
+
+---
+
+### 4. Get Doctor's Available Slots
+
+**Endpoint:** `GET /api/doctors/:id/slots`  
+**Authentication:** ✅ Required
+
+**Query Parameters:**
+- `date`: Date to check slots (YYYY-MM-DD)
+
+**Example Request:**
+```
+GET /api/doctors/507f1f77bcf86cd799439011/slots?date=2026-01-15
+```
+
+**Success Response:** `200 OK`
+```json
+{
+  "date": "2026-01-15",
+  "availableSlots": [
+    "09:00",
+    "09:30",
+    "10:00",
+    "10:30",
+    "14:00",
+    "14:30"
+  ]
+}
+```
+
+---
+
+### 5. Book Appointment
+
+**Endpoint:** `POST /api/appointments`  
+**Authentication:** ✅ Required
+
+**Request Body:**
+```json
+{
+  "doctorId": "507f1f77bcf86cd799439011",
+  "providerName": "Dr. Sarah Johnson",
+  "specialty": "Cardiology",
+  "appointmentDate": "2026-01-15T10:00:00Z",
+  "notes": "Follow-up consultation for heart check-up"
+}
+```
+
+**Success Response:** `201 Created`
+```json
+{
+  "message": "Appointment booked successfully",
+  "appointment": {
+    "id": "65a1b2c3d4e5f6g7h8i9j0k1",
+    "userId": "507f1f77bcf86cd799439011",
+    "doctorId": "507f1f77bcf86cd799439011",
+    "providerName": "Dr. Sarah Johnson",
+    "specialty": "Cardiology",
+    "appointmentDate": "2026-01-15T10:00:00Z",
+    "status": "scheduled",
+    "createdAt": "2026-01-10T12:00:00Z"
+  }
+}
+```
+
+---
+
+### 6. Get User Appointments
+
+**Endpoint:** `GET /api/appointments`  
+**Authentication:** ✅ Required
+
+**Query Parameters:**
+- `status`: Filter by status (scheduled, completed, cancelled)
+- `upcoming`: Boolean (true/false) - only future appointments
+
+**Success Response:** `200 OK`
+```json
+{
+  "appointments": [
+    {
+      "id": "65a1b2c3d4e5f6g7h8i9j0k1",
+      "doctorId": "507f1f77bcf86cd799439011",
+      "providerName": "Dr. Sarah Johnson",
+      "specialty": "Cardiology",
+      "appointmentDate": "2026-01-15T10:00:00Z",
+      "status": "scheduled",
+      "notes": "Follow-up consultation"
+    }
+  ]
+}
+```
+
+---
+
+### 7. Get Doctor's Appointments
+
+**Endpoint:** `GET /api/appointments/doctor-appointments`  
+**Authentication:** ✅ Required (Doctor role)
+
+**Success Response:** `200 OK`
+```json
+{
+  "appointments": [
+    {
+      "id": "65a1b2c3d4e5f6g7h8i9j0k1",
+      "userId": "507f1f77bcf86cd799439011",
+      "userName": "John Doe",
+      "appointmentDate": "2026-01-15T10:00:00Z",
+      "status": "scheduled",
+      "notes": "Follow-up consultation"
+    }
+  ]
+}
+```
+
+---
+
+### 8. Cancel Appointment
+
+**Endpoint:** `DELETE /api/appointments/:id`  
+**Authentication:** ✅ Required
+
+**Success Response:** `200 OK`
+```json
+{
+  "message": "Appointment cancelled successfully"
+}
+```
+
+---
+
+## Meeting Requests Endpoints
+
+Base path: `/api/meetings`  
+**Authentication:** ✅ Required
+
+### 1. Request Meeting (Doctor → Admin)
+
+**Endpoint:** `POST /api/meetings/request`  
+**Authentication:** ✅ Required (Doctor role)
+
+**Request Body:**
+```json
+{
+  "topic": "New Treatment Protocol Discussion",
+  "reason": "Need guidance on implementing new diabetes treatment guidelines",
+  "urgency": "Urgent"
+}
+```
+
+**Parameters:**
+- `topic`: Required, meeting subject (10-200 chars)
+- `reason`: Required, detailed explanation (50-1000 chars)
+- `urgency`: Required, enum: "Normal", "Urgent", "Critical"
+
+**Success Response:** `201 Created`
+```json
+{
+  "message": "Meeting request submitted successfully",
+  "request": {
+    "id": "65a1b2c3d4e5f6g7h8i9j0k1",
+    "requester": "507f1f77bcf86cd799439011",
+    "topic": "New Treatment Protocol Discussion",
+    "urgency": "Urgent",
+    "status": "pending",
+    "createdAt": "2026-01-10T12:00:00Z"
+  }
+}
+```
+
+---
+
+### 2. Get Pending Meeting Requests
+
+**Endpoint:** `GET /api/meetings/pending`  
+**Authentication:** ✅ Required (Admin role)
+
+**Success Response:** `200 OK`
+```json
+{
+  "requests": [
+    {
+      "id": "65a1b2c3d4e5f6g7h8i9j0k1",
+      "requester": {
+        "id": "507f1f77bcf86cd799439011",
+        "name": "Dr. Sarah Johnson",
+        "specialty": "Cardiology"
+      },
+      "topic": "New Treatment Protocol Discussion",
+      "reason": "Need guidance on implementing new diabetes treatment guidelines",
+      "urgency": "Urgent",
+      "status": "pending",
+      "createdAt": "2026-01-10T12:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### 3. Approve and Schedule Meeting
+
+**Endpoint:** `PUT /api/meetings/approve/:id`  
+**Authentication:** ✅ Required (Admin role)
+
+**Request Body:**
+```json
+{
+  "meetingLink": "https://meet.google.com/abc-defg-hij",
+  "scheduledAt": "2026-01-12T14:00:00Z",
+  "duration": 60
+}
+```
+
+**Parameters:**
+- `meetingLink`: Required, Google Meet/Zoom URL
+- `scheduledAt`: Required, meeting date/time (ISO 8601)
+- `duration`: Optional, minutes (default: 60)
+
+**Success Response:** `200 OK`
+```json
+{
+  "message": "Meeting approved and scheduled",
+  "meeting": {
+    "id": "65a1b2c3d4e5f6g7h8i9j0k1",
+    "status": "approved",
+    "meetingLink": "https://meet.google.com/abc-defg-hij",
+    "scheduledAt": "2026-01-12T14:00:00Z",
+    "duration": 60
+  }
+}
+```
+
+---
+
+### 4. Get Upcoming Meetings
+
+**Endpoint:** `GET /api/meetings/upcoming`  
+**Authentication:** ✅ Required (Doctor role)
+
+**Success Response:** `200 OK`
+```json
+{
+  "meetings": [
+    {
+      "id": "65a1b2c3d4e5f6g7h8i9j0k1",
+      "topic": "New Treatment Protocol Discussion",
+      "status": "approved",
+      "meetingLink": "https://meet.google.com/abc-defg-hij",
+      "scheduledAt": "2026-01-12T14:00:00Z",
+      "duration": 60
+    }
+  ]
+}
+```
+
+---
+
+### 5. Summarize Meeting Recording
+
+**Endpoint:** `POST /api/meetings/summarize/:id`  
+**Authentication:** ✅ Required (Admin role)  
+**Content-Type:** multipart/form-data
+
+**Request Body:**
+```
+recording: <Audio/Video file>
+```
+
+**Success Response:** `200 OK`
+```json
+{
+  "message": "Meeting summarized successfully",
+  "summary": "Meeting covered discussion on new diabetes treatment protocols. Key decisions: implement new guidelines starting next month, schedule follow-up training sessions.",
+  "recordingLink": "https://drive.google.com/file/..."
+}
+```
+
+---
+
+## Consultation Reviews Endpoints
+
+Base path: `/api/consultation`  
+**Authentication:** ✅ Required
+
+### 1. Request Doctor Review
+
+**Endpoint:** `PUT /api/consultation/:id/request-review`  
+**Authentication:** ✅ Required (User role)
+
+**Request Body:**
+```json
+{
+  "notes": "I would like a professional doctor to review this AI assessment"
+}
+```
+
+**Success Response:** `200 OK`
+```json
+{
+  "message": "Review request submitted successfully",
+  "consultation": {
+    "id": "65a1b2c3d4e5f6g7h8i9j0k1",
+    "reviewStatus": "pending",
+    "requestedAt": "2026-01-10T12:00:00Z"
+  }
+}
+```
+
+---
+
+### 2. Get Consultation History
+
+**Endpoint:** `GET /api/consultation/history`  
+**Authentication:** ✅ Required
+
+**Query Parameters:**
+- `reviewStatus`: Filter by status (none, pending, reviewed)
+- `limit`: Results per page (default: 20)
+
+**Success Response:** `200 OK`
+```json
+{
+  "consultations": [
+    {
+      "id": "65a1b2c3d4e5f6g7h8i9j0k1",
+      "symptoms": "Severe headache for 3 days",
+      "aiSummary": "...",
+      "urgency": "Medium",
+      "reviewStatus": "reviewed",
+      "doctorFeedback": "AI assessment is accurate. Monitor symptoms.",
+      "reviewedBy": {
+        "name": "Dr. Sarah Johnson",
+        "specialty": "Neurology"
+      },
+      "reviewedAt": "2026-01-10T14:30:00Z",
+      "createdAt": "2026-01-09T10:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### 3. Get Pending Reviews (Doctor Portal)
+
+**Endpoint:** `GET /api/consultation/pending-reviews`  
+**Authentication:** ✅ Required (Doctor role)
+
+**Success Response:** `200 OK`
+```json
+{
+  "consultations": [
+    {
+      "id": "65a1b2c3d4e5f6g7h8i9j0k1",
+      "userId": "507f1f77bcf86cd799439011",
+      "userName": "John Doe",
+      "userAge": 35,
+      "symptoms": "Severe headache for 3 days with dizziness",
+      "aiSummary": "Possible tension headaches or migraines...",
+      "urgency": "Medium",
+      "actions": [...],
+      "requestedAt": "2026-01-09T10:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### 4. Submit Professional Review
+
+**Endpoint:** `PUT /api/consultation/:id/review`  
+**Authentication:** ✅ Required (Doctor role)
+
+**Request Body:**
+```json
+{
+  "doctorFeedback": "The AI assessment is accurate. The symptoms suggest tension headaches. I recommend continuing with the suggested actions and monitoring symptoms for 48 hours.",
+  "additionalRecommendations": [
+    "If symptoms persist beyond 48 hours, schedule an in-person consultation",
+    "Consider keeping a headache diary to track triggers",
+    "Monitor blood pressure daily"
+  ]
+}
+```
+
+**Success Response:** `200 OK`
+```json
+{
+  "message": "Review submitted successfully",
+  "consultation": {
+    "id": "65a1b2c3d4e5f6g7h8i9j0k1",
+    "reviewStatus": "reviewed",
+    "reviewedBy": "507f1f77bcf86cd799439011",
+    "reviewedAt": "2026-01-10T14:30:00Z"
+  }
+}
+```
+
+---
+
+## Premium Subscriptions Endpoints
+
+Base path: `/api/subscription`  
+**Authentication:** ✅ Required
+
+### 1. Create Checkout Session
+
+**Endpoint:** `POST /api/subscription/create-checkout-session`  
+**Authentication:** ✅ Required
+
+**Request Body:**
+```json
+{
+  "priceId": "price_1234567890abcdef",
+  "successUrl": "https://lifedoc.app/dashboard?success=true",
+  "cancelUrl": "https://lifedoc.app/pricing"
+}
+```
+
+**Parameters:**
+- `priceId`: Required, Stripe price ID for the plan
+- `successUrl`: Required, redirect URL on successful payment
+- `cancelUrl`: Required, redirect URL on cancelled payment
+
+**Success Response:** `200 OK`
+```json
+{
+  "sessionId": "cs_test_1234567890abcdef",
+  "url": "https://checkout.stripe.com/pay/cs_test_1234567890abcdef"
+}
+```
+
+**Usage:**
+```javascript
+// Frontend code to redirect to Stripe Checkout
+const response = await fetch('/api/subscription/create-checkout-session', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    priceId: 'price_1234567890',
+    successUrl: window.location.origin + '/dashboard?success=true',
+    cancelUrl: window.location.origin + '/pricing'
+  })
+});
+
+const { url } = await response.json();
+window.location.href = url; // Redirect to Stripe Checkout
+```
+
+---
+
+### 2. Get Subscription Status
+
+**Endpoint:** `GET /api/subscription/status`  
+**Authentication:** ✅ Required
+
+**Success Response:** `200 OK`
+```json
+{
+  "hasActiveSubscription": true,
+  "subscription": {
+    "id": "sub_1234567890",
+    "customerId": "cus_1234567890",
+    "status": "active",
+    "currentPeriodStart": "2026-01-10T00:00:00Z",
+    "currentPeriodEnd": "2026-02-10T00:00:00Z",
+    "cancelAtPeriodEnd": false,
+    "plan": {
+      "name": "Premium Monthly",
+      "amount": 999,
+      "currency": "usd",
+      "interval": "month"
+    }
+  },
+  "recentPayments": [
+    {
+      "id": "pi_1234567890",
+      "amount": 999,
+      "status": "succeeded",
+      "paymentDate": "2026-01-10T10:15:00Z",
+      "invoiceUrl": "https://invoice.stripe.com/..."
+    }
+  ]
+}
+```
+
+**No Active Subscription Response:** `200 OK`
+```json
+{
+  "hasActiveSubscription": false,
+  "subscription": null,
+  "recentPayments": []
+}
+```
+
+---
+
+### 3. Stripe Webhook Handler
+
+**Endpoint:** `POST /api/subscription/webhook`  
+**Authentication:** ❌ Public (Stripe signature verified)
+
+**Description:** This endpoint handles Stripe webhook events for subscription lifecycle management. It should be registered in your Stripe Dashboard.
+
+**Webhook Events Handled:**
+- `checkout.session.completed` - New subscription created
+- `customer.subscription.updated` - Subscription status changed
+- `customer.subscription.deleted` - Subscription cancelled
+- `invoice.payment_succeeded` - Payment successful
+- `invoice.payment_failed` - Payment failed
+
+**Webhook Configuration:**
+1. Go to Stripe Dashboard → Webhooks
+2. Add endpoint: `https://yourdomain.com/api/subscription/webhook`
+3. Select events: All subscription and invoice events
+4. Copy webhook secret to `.env` as `STRIPE_WEBHOOK_SECRET`
+
+---
+
+## Saved Posts Endpoints
+
+Base path: `/api/saved-posts`  
+**Authentication:** ✅ Required
+
+### 1. Save Article
+
+**Endpoint:** `POST /api/saved-posts`  
+**Authentication:** ✅ Required
+
+**Request Body:**
+```json
+{
+  "articleId": "65a1b2c3d4e5f6g7h8i9j0k1"
+}
+```
+
+**Success Response:** `201 Created`
+```json
+{
+  "message": "Article saved successfully",
+  "savedPost": {
+    "id": "65a1b2c3d4e5f6g7h8i9j0k1",
+    "userId": "507f1f77bcf86cd799439011",
+    "articleId": "65a1b2c3d4e5f6g7h8i9j0k1",
+    "savedAt": "2026-01-10T12:00:00Z"
+  }
+}
+```
+
+---
+
+### 2. Unsave Article
+
+**Endpoint:** `DELETE /api/saved-posts/:articleId`  
+**Authentication:** ✅ Required
+
+**Success Response:** `200 OK`
+```json
+{
+  "message": "Article unsaved successfully"
+}
+```
+
+---
+
+### 3. Get Saved Articles
+
+**Endpoint:** `GET /api/saved-posts`  
+**Authentication:** ✅ Required
+
+**Success Response:** `200 OK`
+```json
+{
+  "savedPosts": [
+    {
+      "id": "65a1b2c3d4e5f6g7h8i9j0k1",
+      "article": {
+        "id": "65a1b2c3d4e5f6g7h8i9j0k1",
+        "title": "New Diabetes Treatment Shows Promise",
+        "summary": "...",
+        "source": "Medical News Today",
+        "publishedAt": "2026-01-09T08:00:00Z"
+      },
+      "savedAt": "2026-01-10T12:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### 4. Get Saved Article IDs
+
+**Endpoint:** `GET /api/saved-posts/ids`  
+**Authentication:** ✅ Required
+
+**Description:** Returns only the IDs of saved articles for quick lookup.
+
+**Success Response:** `200 OK`
+```json
+{
+  "articleIds": [
+    "65a1b2c3d4e5f6g7h8i9j0k1",
+    "65a1b2c3d4e5f6g7h8i9j0k2",
+    "65a1b2c3d4e5f6g7h8i9j0k3"
+  ]
+}
+```
+
+---
+
 ## Doctor Endpoints
 
 Base path: `/api/doctor`  
@@ -1487,6 +2198,3 @@ token: <your_jwt_token>
 
 ---
 
-**Last Updated:** January 10, 2026  
-**API Version:** 1.0  
-**Status:** ✅ Stable
