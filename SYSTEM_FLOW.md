@@ -13,8 +13,12 @@
 - [Family Health Monitoring Flows](#family-health-monitoring-flows)
 - [Emergency Response Flows](#emergency-response-flows)
 - [Doctor Verification & Admin Flows](#doctor-verification--admin-flows)
+- [Payment & Subscription Flows](#payment--subscription-flows)
 - [Data Synchronization Flows](#data-synchronization-flows)
 - [Notification & Alert Flows](#notification--alert-flows)
+- [System Performance & Optimization Flows](#system-performance--optimization-flows)
+- [Error Handling & Recovery Flows](#error-handling--recovery-flows)
+- [Security & Authentication Flows](#security--authentication-flows)
 
 ---
 
@@ -73,6 +77,9 @@ LifeDoc leverages modern healthcare technology stack:
 | **Family Management** | Multi-user health tracking | Family groups, shared access, member monitoring |
 | **Emergency Services** | Crisis response | SOS alerts, emergency contacts, location sharing |
 | **Admin & Doctor** | Professional oversight | Doctor verification, consultation review, medical data seeding |
+| **Payments & Subscriptions** | Premium features | Stripe checkout, subscription management, webhooks |
+| **Content & Sharing** | Data accessibility | Saved posts, public health data sharing, secure links |
+| **Meetings & Collaboration** | Professional communication | Doctor meeting requests, admin approval workflows |
 
 ### System Architecture Context
 
@@ -733,8 +740,8 @@ sequenceDiagram
 - Transparency in AI limitations and confidence levels
 - Human oversight requirement for high-risk recommendations
 - HIPAA-compliant data handling with zero AI training data retention
-```
 
+---
 ### 10. Doctor Review & Consultation Approval Flow
 
 Medical professionals reviewing AI-generated consultations.
@@ -1318,9 +1325,361 @@ sequenceDiagram
 
 ---
 
+## Payment & Subscription Flows
+
+### 19. Stripe Subscription & Checkout Flow
+
+Premium subscription management with secure payment processing.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User
+    participant Web
+    participant API
+    participant Stripe
+    participant DB
+    participant Webhook as Stripe Webhook
+    
+    Note over User,Webhook: Subscription Purchase Flow
+    
+    User->>Web: Click "Upgrade to Premium"
+    Web->>Web: Show pricing plans
+    User->>Web: Select plan (Monthly/Yearly)
+    Web->>API: POST /api/subscription/create-checkout-session
+    
+    API->>API: Verify user authentication
+    API->>Stripe: Create checkout session
+    Note over Stripe: Session includes:<br/>- Price ID<br/>- Customer email<br/>- Success/Cancel URLs
+    
+    Stripe-->>API: Checkout session URL
+    API-->>Web: Return session URL
+    Web->>Web: Redirect to Stripe Checkout
+    
+    User->>Stripe: Enter payment details
+    User->>Stripe: Complete payment
+    
+    alt Payment Successful
+        Stripe->>Webhook: POST /api/subscription/webhook
+        Note over Webhook: Event: checkout.session.completed
+        
+        Webhook->>Webhook: Verify signature
+        Webhook->>DB: Update user subscription status
+        DB-->>Webhook: Updated
+        Webhook->>DB: Create payment record
+        Webhook-->>Stripe: 200 OK
+        
+        Stripe->>User: Redirect to success URL
+        User->>Web: Return to app
+        Web->>API: GET /api/subscription/status
+        API->>DB: Fetch subscription details
+        DB-->>API: Subscription active
+        API-->>Web: Premium features unlocked
+        Web-->>User: Show premium dashboard
+    else Payment Failed
+        Stripe->>User: Show error message
+        User->>Web: Return to app
+        Web-->>User: Subscription not activated
+    end
+```
+
+**Subscription Plans:**
+```json
+{
+  "plans": [
+    {
+      "name": "Free",
+      "price": 0,
+      "features": ["Basic health tracking", "AI consultations (5/month)", "Family members (3)"],
+      "limits": {
+        "aiConsultations": 5,
+        "familyMembers": 3,
+        "storage": "100MB"
+      }
+    },
+    {
+      "name": "Premium Monthly",
+      "price": 9.99,
+      "interval": "month",
+      "features": ["Unlimited AI consultations", "Unlimited family members", "Priority support", "Advanced analytics"],
+      "limits": {
+        "aiConsultations": "unlimited",
+        "familyMembers": "unlimited",
+        "storage": "5GB"
+      }
+    },
+    {
+      "name": "Premium Yearly",
+      "price": 99.99,
+      "interval": "year",
+      "savings": "16%",
+      "features": ["All Premium Monthly features", "2 months free", "Priority doctor access"],
+      "limits": {
+        "aiConsultations": "unlimited",
+        "familyMembers": "unlimited",
+        "storage": "10GB"
+      }
+    }
+  ]
+}
+```
+
+**Webhook Event Handling:**
+```typescript
+// Stripe webhook events processed:
+- checkout.session.completed: Payment successful, activate subscription
+- invoice.payment_succeeded: Recurring payment successful
+- invoice.payment_failed: Payment failed, notify user
+- customer.subscription.updated: Subscription plan changed
+- customer.subscription.deleted: Subscription cancelled
+```
+
+---
+
+### 20. Saved Posts & Bookmarking Flow
+
+Save and manage health news articles for later reading.
+
+```mermaid
+flowchart TD
+    A[User views health article] --> B[Click bookmark icon]
+    B --> C[POST /api/saved-posts]
+    
+    C --> D[Check authentication]
+    D --> E{User logged in?}
+    E -->|No| F[401 Unauthorized]
+    E -->|Yes| G[Check if already saved]
+    
+    G --> H{Already bookmarked?}
+    H -->|Yes| I[409 Already saved]
+    H -->|No| J[Create SavedPost record]
+    
+    J --> K[Save to database]
+    K --> L{Save successful?}
+    L -->|No| M[500 Database error]
+    L -->|Yes| N[Return success]
+    
+    N --> O[Update UI - filled bookmark]
+    O --> P[Add to saved collection]
+    
+    F & I & M --> Q[Show error message]
+    
+    P --> R{User wants to unsave?}
+    R -->|Yes| S[Click bookmark again]
+    S --> T[DELETE /api/saved-posts/:articleId]
+    T --> U[Remove from database]
+    U --> V[Update UI - empty bookmark]
+    
+    R -->|No| W[View saved posts page]
+    W --> X[GET /api/saved-posts]
+    X --> Y[Fetch user's bookmarks]
+    Y --> Z[Display saved articles list]
+    
+    style A fill:#e3f2fd,stroke:#1565c0,color:#000
+    style P fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style F fill:#ffebee,stroke:#c62828,color:#000
+```
+
+**Saved Post Data Structure:**
+```json
+{
+  "savedPostId": "...",
+  "userId": "...",
+  "articleId": "news-article-123",
+  "title": "10 Tips for Better Sleep and Health",
+  "description": "Learn evidence-based strategies...",
+  "imageUrl": "https://cloudinary.com/...",
+  "source": "Health Magazine",
+  "publishedAt": "2026-01-10T14:30:00Z",
+  "savedAt": "2026-01-11T09:15:00Z",
+  "category": "wellness"
+}
+```
+
+---
+
+### 21. Health Data Sharing via Link Flow
+
+Generate secure shareable links for health data with doctors or family.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User
+    participant Web
+    participant API
+    participant DB
+    participant Recipient
+    
+    Note over User,Recipient: Public Health Data Sharing
+    
+    User->>Web: Click "Share Profile"
+    Web->>Web: Show share options
+    User->>Web: Generate share link
+    Web->>API: GET /api/share/generate/:userId
+    
+    API->>API: Create share token
+    API->>DB: Save share settings
+    Note over DB: Settings:<br/>- Expiration time<br/>- Data scope<br/>- View count limit
+    
+    API-->>Web: Share URL
+    Web->>Web: Display shareable link
+    User->>User: Copy link
+    
+    User->>Recipient: Send link via email/message
+    
+    Recipient->>Web: Open share link
+    Web->>API: GET /api/share/:userId
+    
+    API->>API: Verify link validity
+    API->>DB: Check expiration & limits
+    
+    alt Link valid
+        API->>DB: Fetch user profile (public fields)
+        API->>DB: Fetch recent lab reports (5)
+        API->>DB: Fetch recent doctor reports (5)
+        API->>DB: Fetch recent measurements (10)
+        
+        DB-->>API: Aggregated health data
+        API->>DB: Increment view count
+        API-->>Web: Return sanitized data
+        
+        Web->>Web: Display health summary
+        Web-->>Recipient: Show public profile
+        
+        Note over Recipient: Can view:<br/>- Basic profile<br/>- Recent vitals<br/>- Lab reports<br/>- Doctor reports<br/>NO sensitive data
+    else Link expired/invalid
+        API-->>Web: 404 or 403 error
+        Web-->>Recipient: Link expired message
+    end
+```
+
+**Share Link Security:**
+- ✅ Read-only access (no modifications)
+- ✅ Time-limited (default 7 days)
+- ✅ View count limit (default 50 views)
+- ✅ Excludes sensitive data (consultations, prescriptions)
+- ✅ User can revoke anytime
+- ✅ Audit log tracks all views
+
+**Shared Data Scope:**
+```typescript
+// Public shareable data:
+{
+  profile: {
+    name: true,
+    age: true,
+    profileImage: true
+  },
+  labReports: {
+    limit: 5,
+    fields: ['testType', 'reportDate', 'parsedResults']
+  },
+  doctorReports: {
+    limit: 5,
+    fields: ['doctorName', 'visitDate', 'diagnosis', 'summary']
+  },
+  measurements: {
+    limit: 10,
+    fields: ['date', 'readings']
+  },
+  excluded: ['consultations', 'prescriptions', 'sosHistory', 'familyData']
+}
+```
+
+---
+
+### 22. Doctor Meeting Request & Approval Flow
+
+Healthcare professionals requesting meetings with admin approval.
+
+```mermaid
+flowchart TD
+    A[Doctor logs in] --> B[Navigate to Meetings]
+    B --> C[Click Request Meeting]
+    C --> D[Fill meeting request form]
+    
+    D --> E[Enter details]
+    E --> F[Meeting topic]
+    E --> G[Preferred date/time]
+    E --> H[Meeting duration]
+    E --> I[Additional notes]
+    
+    F & G & H & I --> J[POST /api/meetings/request]
+    J --> K[Validate doctor authentication]
+    K --> L{Is verified doctor?}
+    
+    L -->|No| M[403 Forbidden]
+    L -->|Yes| N[Create meeting request]
+    
+    N --> O[Save to database]
+    O --> P[Set status: PENDING]
+    P --> Q[Notify admin]
+    Q --> R[Send email notification]
+    R --> S[Doctor sees pending status]
+    
+    M --> T[Show error message]
+    
+    S --> U[Admin receives notification]
+    U --> V[Admin logs in]
+    V --> W[GET /api/meetings/pending]
+    W --> X[View pending requests]
+    
+    X --> Y{Admin decision}
+    
+    Y -->|Approve| Z[PUT /api/meetings/approve/:id]
+    Z --> AA[Update status: APPROVED]
+    AA --> AB[Generate meeting link]
+    AB --> AC[Send confirmation to doctor]
+    AC --> AD[Doctor receives approval email]
+    AD --> AE[Meeting scheduled]
+    
+    Y -->|Reject| AF[Add rejection reason]
+    AF --> AG[Update status: REJECTED]
+    AG --> AH[Notify doctor with reason]
+    AH --> AI[Doctor receives rejection]
+    
+    AE --> AJ[GET /api/meetings/upcoming]
+    AJ --> AK[Doctor views upcoming meetings]
+    AK --> AL[Meeting details displayed]
+    
+    style A fill:#e3f2fd,stroke:#1565c0,color:#000
+    style AE fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style M fill:#ffebee,stroke:#c62828,color:#000
+    style AI fill:#fff3e0,stroke:#f57c00,color:#000
+```
+
+**Meeting Request Lifecycle:**
+```
+PENDING → APPROVED → SCHEDULED → COMPLETED
+    ↓
+REJECTED
+```
+
+**Meeting Data Structure:**
+```json
+{
+  "meetingId": "...",
+  "doctorId": "...",
+  "doctorName": "Dr. Smith",
+  "topic": "Patient Case Discussion",
+  "requestedDate": "2026-01-15T10:00:00Z",
+  "duration": 60,
+  "notes": "Need to discuss complex diagnosis case",
+  "status": "PENDING",
+  "adminNotes": "",
+  "meetingLink": null,
+  "createdAt": "2026-01-11T09:00:00Z",
+  "approvedAt": null,
+  "approvedBy": null
+}
+```
+
+---
+
 ## Notification & Alert Flows
 
-### 19. Multi-Channel Notification Delivery Flow
+### 23. Multi-Channel Notification Delivery Flow
 
 Comprehensive notification system across email, SMS, and in-app channels.
 
@@ -1373,7 +1732,7 @@ flowchart TD
     style L fill:#ffebee,stroke:#c62828,color:#000
 ```
 
-### 20. Automated Health News Cron Job Flow
+### 24. Automated Health News Cron Job Flow
 
 Background job for fetching and storing health news articles.
 
@@ -1427,7 +1786,7 @@ sequenceDiagram
 
 ## System Performance & Optimization Flows
 
-### 21. API Request Lifecycle & Middleware Chain
+### 25. API Request Lifecycle & Middleware Chain
 
 Complete request processing from client to database and back.
 
@@ -1536,7 +1895,7 @@ flowchart TD
 
 ## Error Handling & Recovery Flows
 
-### 22. Global Error Handling Strategy
+### 26. Global Error Handling Strategy
 
 Centralized error management across the application.
 
@@ -1589,7 +1948,7 @@ flowchart TD
 
 ## Security & Authentication Flows
 
-### 23. JWT Token Lifecycle Management
+### 27. JWT Token Lifecycle Management
 
 Complete token generation, validation, and refresh workflow.
 
@@ -1661,10 +2020,13 @@ This document provides comprehensive system flow documentation for LifeDoc healt
 | **Emergency System** | Multi-channel alerts | Life-saving response |
 | **Family Features** | Role-based access | Comprehensive care |
 | **Data Privacy** | Encryption, HIPAA-aware | Protected health info |
+| **Payments** | Stripe integration | Secure subscriptions |
+| **Content Sharing** | Secure shareable links | Easy data access |
+| **Professional Tools** | Doctor meeting system | Enhanced collaboration |
 
 ### Flow Categories Summary
 
-- ✅ **23 documented flows** covering all major features
+- ✅ **27 documented flows** covering all major features
 - ✅ **Mermaid diagrams** for visual understanding
 - ✅ **Sequence diagrams** for time-based interactions
 - ✅ **Flowcharts** for decision logic
@@ -1756,9 +2118,6 @@ This system flow documentation is a living document. To contribute:
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: January 11, 2026  
-**Maintained By**: LifeDoc Development Team  
 **Related Documentation**: [ARCHITECTURE.md](ARCHITECTURE.md), [API_ENDPOINTS.md](API_ENDPOINTS.md), [DFD.md](DFD.md)
 
 For technical implementation details, see [docs/TECHNICAL_FLOWS.md](docs/TECHNICAL_FLOWS.md)
