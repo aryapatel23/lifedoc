@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 import { FaCalendarAlt, FaUserMd, FaFlask, FaPlus, FaTimes, FaTrash, FaCheckCircle, FaFileUpload } from 'react-icons/fa';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 interface Appointment {
     _id: string;
@@ -33,11 +34,25 @@ const AppointmentsPage = () => {
     // Use port 5000 as per previous fix
     const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/appointments`;
 
+    const searchParams = useSearchParams();
+
     useEffect(() => {
         if (token) {
             fetchAppointments();
         }
-    }, [token]);
+
+        const doctorId = searchParams.get('doctorId');
+        const doctorName = searchParams.get('doctorName');
+
+        if (doctorId && doctorName) {
+            setFormData(prev => ({
+                ...prev,
+                providerName: decodeURIComponent(doctorName),
+                type: 'Doctor'
+            }));
+            setShowModal(true);
+        }
+    }, [token, searchParams]);
 
     const fetchAppointments = async () => {
         try {
@@ -56,8 +71,10 @@ const AppointmentsPage = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        const doctorId = searchParams.get('doctorId');
         try {
-            const response = await axios.post(API_URL, formData, {
+            const payload = { ...formData, doctorId: doctorId || undefined };
+            const response = await axios.post(API_URL, payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (response.data.success) {

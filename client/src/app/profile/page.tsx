@@ -6,7 +6,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import { updateUserProfile, uploadProfilePhoto, fetchUserProfile } from '@/store/slices/authSlice';
-import { FaUser, FaEnvelope, FaBirthdayCake, FaIdCard, FaEdit, FaTimes, FaSave, FaCamera, FaStethoscope, FaCheck, FaChevronRight, FaBookmark, FaShareAlt, FaUserMd, FaCog } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaBirthdayCake, FaIdCard, FaEdit, FaTimes, FaSave, FaCamera, FaStethoscope, FaCheck, FaChevronRight, FaBookmark, FaShareAlt, FaUserMd, FaCog, FaStar } from 'react-icons/fa';
 import axios from 'axios';
 import Link from 'next/link';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -606,6 +606,74 @@ export default function Profile() {
                         </div>
 
 
+
+                        {/* Subscription Plan Section */}
+                        <div className="mt-8 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="flex items-center gap-2 mb-6">
+                                <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center text-amber-500">
+                                    <FaStar />
+                                </div>
+                                <h3 className="text-lg font-bold text-gray-800">Subscription Plan</h3>
+                            </div>
+
+                            <div className={`rounded-xl p-6 ${user?.subscription?.plan === 'premium'
+                                ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-100'
+                                : 'bg-gray-50 border border-gray-100'
+                                }`}>
+                                <div className="flex items-center justify-between mb-4">
+                                    <div>
+                                        <span className={`text-sm font-bold uppercase tracking-wider ${user?.subscription?.plan === 'premium' ? 'text-amber-700' : 'text-gray-500'
+                                            }`}>
+                                            {user?.subscription?.plan === 'premium' ? 'Premium Plan' : 'Free Plan'}
+                                        </span>
+                                        {user?.subscription?.plan === 'premium' && (
+                                            <p className="text-xs text-amber-600 font-medium mt-1">
+                                                Unlimited Access Unlocked
+                                            </p>
+                                        )}
+                                    </div>
+                                    {user?.subscription?.plan === 'premium' && <FaStar className="text-2xl text-amber-500" />}
+                                </div>
+
+                                {user?.subscription?.plan !== 'premium' && (
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                                    <span>Consultations Used</span>
+                                                    <span>{user?.usage?.aiConsultations || 0}/5</span>
+                                                </div>
+                                                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                                    <div
+                                                        className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                                                        style={{ width: `${Math.min(((user?.usage?.aiConsultations || 0) / 5) * 100, 100)}%` }}
+                                                    ></div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                                    <span>Scans Used</span>
+                                                    <span>{user?.usage?.ocrScans || 0}/5</span>
+                                                </div>
+                                                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                                    <div
+                                                        className="bg-purple-500 h-2 rounded-full transition-all duration-500"
+                                                        style={{ width: `${Math.min(((user?.usage?.ocrScans || 0) / 5) * 100, 100)}%` }}
+                                                    ></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <Link
+                                            href="/pricing"
+                                            className="block w-full sm:w-auto sm:inline-block text-center bg-gray-900 text-white text-sm font-bold px-6 py-3 rounded-xl hover:bg-black transition-colors shadow-lg shadow-gray-200 mt-2"
+                                        >
+                                            Upgrade to Premium
+                                        </Link>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
                         {/* Settings Section */}
                         <div className="mt-8 bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300">

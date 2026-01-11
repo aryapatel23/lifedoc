@@ -68,6 +68,7 @@ app.use("/api/doctor-verification", require("./routes/doctorVerification"));
 app.use("/api/consultation", require("./routes/consultation"));
 app.use("/api/consultation", require("./routes/consultation"));
 app.use("/api/meetings", require("./routes/meetings"));
+app.use("/api/doctors", require("./routes/doctors"));
 app.use("/api/subscription", require("./routes/subscription"));
 
 

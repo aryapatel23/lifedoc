@@ -2,11 +2,12 @@ const Appointment = require('../models/Appointment');
 
 exports.createAppointment = async (req, res) => {
     try {
-        const { providerName, type, date, time, notes } = req.body;
+        const { providerName, type, date, time, notes, doctorId } = req.body;
         const userId = req.user.id; // Assuming auth middleware adds user to req
 
         const newAppointment = new Appointment({
             userId,
+            doctorId,
             providerName,
             type,
             date,
