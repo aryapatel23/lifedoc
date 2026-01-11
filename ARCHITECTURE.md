@@ -79,9 +79,61 @@
 | AI - Vision | OpenAI | 6.15.0 | Prescription OCR, lab report parsing |
 | Email | Nodemailer | 7.0.12 | OTP delivery, notifications |
 | SMS | Twilio | 5.11.2 | Emergency alerts |
+| Payment | Stripe | 20.1.2 | Subscription and payment processing |
+| Scheduler | node-cron | 4.2.1 | Background jobs scheduling |
+| RSS Parser | rss-parser | 3.13.0 | Health news aggregation |
 | Security | Helmet | 8.0.0 | HTTP security headers |
 | Rate Limiting | express-rate-limit | 7.7.3 | API throttling |
 | PDF Parser | pdf-parse | 1.1.1 | Lab report text extraction |
+
+### Module Pattern
+
+Each feature module follows a consistent pattern:
+
+```
+module/
+├── module-controller.js    # Request handling, response formatting
+├── module-service.js       # Business logic (if complex)
+├── module-routes.js        # Route definitions with middleware
+└── module-validation.js    # Request validation (optional)
+```
+
+**Example: Consultation Module**
+```
+consultation/
+├── consultationController.js    # HTTP request/response handling
+├── consultation.js              # Routes definition
+```
+
+### Middleware Chain
+
+Request processing order:
+
+```
+1. CORS (Cross-Origin Resource Sharing)
+       ↓
+2. Helmet (Security Headers)
+       ↓
+3. JSON Body Parser
+       ↓
+4. Request Logging
+       ↓
+5. Rate Limiting (if applied)
+       ↓
+6. Route Matching
+       ↓
+7. Auth Middleware (JWT Verification)
+       ↓
+8. Role Middleware (Access Control)
+       ↓
+9. Usage Tracking (AI endpoints)
+       ↓
+10. Controller (Business Logic)
+       ↓
+11. Error Middleware (Error Handling)
+       ↓
+12. Response
+```
 
 ### Directory Structure
 
@@ -234,6 +286,7 @@ Request processing order:
 | **Family** | Family |
 | **Reference Data** | Medicine, LabTest, Article |
 | **Doctor Portal** | DoctorVerification, MeetingRequest |
+| **Payments** | Payment |
 | **User Content** | SavedPost |
 
 ### Mongoose Schema Examples
@@ -891,38 +944,46 @@ module.exports = router;
 ### File Upload Flow
 
 ```
-┌──────────┐         ┌──────────┐         ┌──────────┐         ┌──────────┐
-│  Client  │         │  Server  │         │  Multer  │         │Cloudinary│
-└────┬─────┘         └────┬─────┘         └────┬─────┘         └────┬─────┘
-     │                    │                    │                    │
-     │ POST /upload/image │                    │                    │
-     │ multipart/form-data│                    │                    │
-     │───────────────────▶│                    │                    │
-     │                    │                    │                    │
-     │                    │ Parse multipart    │                    │
-     │                    │───────────────────▶│                    │
-     │                    │                    │                    │
-     │                    │◀───────────────────│                    │
-     │                    │ File buffer        │                    │
-     │                    │                    │                    │
-     │                    │ Validate:          │                    │
-     │                    │ - File type        │                    │
-     │                    │ - File size (10MB) │                    │
-     │                    │                    │                    │
-     │                    │ cloudinary.uploader.upload()            │
-     │                    │───────────────────────────────────────▶│
-     │                    │                    │                    │
-     │                    │◀───────────────────────────────────────│
-     │                    │ { secure_url, public_id }              │
-     │                    │                    │                    │
-     │                    │ Save to MongoDB:   │                    │
-     │                    │ - URL              │                    │
-     │                    │ - public_id        │                    │
-     │                    │ - file type        │                    │
-     │                    │                    │                    │
-     │◀───────────────────│                    │                    │
-     │ { success, url }   │                    │                    │
-     │                    │                    │                    │
+┌──────────┐         ┌──────────┐         ┌──────────┐         ┌──────────┐         ┌──────────┐
+│  Client  │         │  Server  │         │  Multer  │         │Cloudinary│         │ MongoDB  │
+└────┬─────┘         └────┬─────┘         └────┬─────┘         └────┬─────┘         └────┬─────┘
+     │                    │                    │                    │                    │
+     │ POST /upload/image │                    │                    │                    │
+     │ multipart/form-data│                    │                    │                    │
+     │───────────────────▶│                    │                    │                    │
+     │                    │                    │                    │                    │
+     │                    │ Parse multipart    │                    │                    │
+     │                    │───────────────────▶│                    │                    │
+     │                    │                    │                    │                    │
+     │                    │◀───────────────────│                    │                    │
+     │                    │ File buffer        │                    │                    │
+     │                    │                    │                    │                    │
+     │                    │ Validate:          │                    │                    │
+     │                    │ - File type        │                    │                    │
+     │                    │ - File size (10MB) │                    │                    │
+     │                    │ - Auth user        │                    │                    │
+     │                    │                    │                    │                    │
+     │                    │ cloudinary.uploader.upload()                                 │
+     │                    │───────────────────────────────────────▶│                    │
+     │                    │                    │                    │                    │
+     │                    │                    │    Upload to CDN   │                    │
+     │                    │                    │    Optimize image  │                    │
+     │                    │                    │    Generate URL    │                    │
+     │                    │                    │                    │                    │
+     │                    │◀───────────────────────────────────────│                    │
+     │                    │ { secure_url, public_id, format }      │                    │
+     │                    │                    │                    │                    │
+     │                    │ Save metadata to DB                                          │
+     │                    │─────────────────────────────────────────────────────────────▶│
+     │                    │ - URL, public_id                                             │
+     │                    │ - userId, type                                               │
+     │                    │ - uploadedAt                                                 │
+     │                    │                    │                    │                    │
+     │                    │◀─────────────────────────────────────────────────────────────│
+     │                    │                    │                    │                    │
+     │◀───────────────────│                    │                    │                    │
+     │ { success, url }   │                    │                    │                    │
+     │                    │                    │                    │                    │
 ```
 
 ### Storage Configuration
@@ -986,9 +1047,11 @@ module.exports = upload;
 
 ## AI Module Architecture
 
-### AI Services Integration
+### AI Services Integration Overview
 
-LifeDoc integrates two primary AI services:
+LifeDoc integrates multiple AI services for different healthcare tasks:
+
+**Primary AI Services:**
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -1337,6 +1400,58 @@ const totalTokens = await Consultation.aggregate([
 const estimatedCost = (totalTokens[0].total / 1000) * 0.01; // $0.01 per 1K tokens
 ```
 
+**AI Usage Tracking Middleware:**
+```javascript
+// middleware/usageMiddleware.js
+const trackAIUsage = async (req, res, next) => {
+  const originalJson = res.json;
+  
+  res.json = function(data) {
+    // Track token usage if AI response
+    if (data.tokenUsage) {
+      // Log to analytics/monitoring
+      console.log('AI Usage:', {
+        userId: req.user?.id,
+        endpoint: req.path,
+        tokens: data.tokenUsage.totalTokens,
+        timestamp: new Date()
+      });
+    }
+    
+    return originalJson.call(this, data);
+  };
+  
+  next();
+};
+
+module.exports = { trackAIUsage };
+```
+
+**AI Usage Tracking Middleware:**
+```javascript
+// middleware/usageMiddleware.js
+const trackAIUsage = async (req, res, next) => {
+  const originalJson = res.json;
+  
+  res.json = function(data) {
+    // Track token usage if AI response
+    if (data.tokenUsage) {
+      // Log to analytics/monitoring
+      console.log('AI Usage:', {
+        userId: req.user?.id,
+        endpoint: req.path,
+        tokens: data.tokenUsage.totalTokens,
+        timestamp: new Date()
+      });
+    }
+    
+    return originalJson.call(this, data);
+  };
+  
+  next();
+};
+```
+
 ---
 
 ## Deployment Architecture
@@ -1389,14 +1504,47 @@ const estimatedCost = (totalTokens[0].total / 1000) * 0.01; // $0.01 per 1K toke
 
 ### Deployment Platforms
 
-| Component | Platform | Reason |
-|-----------|----------|--------|
-| **Frontend** | Vercel | Optimized for Next.js, automatic deployments, edge functions |
-| **Backend** | Railway / Render | Easy Node.js hosting, environment variables, logs |
-| **Database** | MongoDB Atlas | Managed MongoDB, automated backups, global clusters |
-| **File Storage** | Cloudinary | CDN, transformations, automatic optimization |
-| **Email** | SendGrid / SMTP | Reliable email delivery, high sending limits |
-| **SMS** | Twilio | Global SMS delivery, emergency alerts |
+| Component | Platform | Reason | Monthly Cost |
+|-----------|----------|--------|-------------|
+| **Frontend** | Vercel | Optimized for Next.js, automatic deployments, edge functions | Free - $20 |
+| **Backend** | Railway / Render | Easy Node.js hosting, environment variables, logs | $5 - $20 |
+| **Database** | MongoDB Atlas | Managed MongoDB, automated backups, global clusters | Free - $57 |
+| **File Storage** | Cloudinary | CDN, transformations, automatic optimization | Free - $89 |
+| **Email** | SendGrid / SMTP | Reliable email delivery, high sending limits | Free - $20 |
+| **SMS** | Twilio | Global SMS delivery, emergency alerts | Pay-as-you-go |
+| **AI (Gemini)** | Google Cloud | Symptom analysis, diary summarization | Pay-as-you-go |
+| **AI (OpenAI)** | OpenAI | OCR, lab report parsing | Pay-as-you-go |
+
+### CI/CD Pipeline
+
+```
+┌──────────────────┐
+│  Git Push        │
+│  (GitHub)        │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│  Vercel          │
+│  - Auto deploy   │
+│  - Build frontend│
+│  - Run tests     │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│  Railway         │
+│  - Auto deploy   │
+│  - Build backend │
+│  - Health check  │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│  Production      │
+│  Live            │
+└──────────────────┘
+```
 
 ### Environment Variables
 
@@ -1581,14 +1729,78 @@ exports.createDiary = async (req, res) => {
 ```javascript
 // Simple console logging (upgrade to Winston/Pino for production)
 const log = {
-  info: (message, meta) => console.log(`[INFO] ${message}`, meta),
-  error: (message, error) => console.error(`[ERROR] ${message}`, error),
-  warn: (message, meta) => console.warn(`[WARN] ${message}`, meta),
+  info: (message, meta) => console.log(`[INFO] ${new Date().toISOString()} ${message}`, meta),
+  error: (message, error) => console.error(`[ERROR] ${new Date().toISOString()} ${message}`, error),
+  warn: (message, meta) => console.warn(`[WARN] ${new Date().toISOString()} ${message}`, meta),
+  debug: (message, meta) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.debug(`[DEBUG] ${new Date().toISOString()} ${message}`, meta);
+    }
+  }
 };
 
 // Usage
 log.info('User logged in', { userId: user.id, email: user.email });
 log.error('AI API call failed', error);
+log.warn('Rate limit approaching', { userId: user.id, requests: 18 });
+log.debug('Database query', { query: 'findById', collection: 'users' });
+```
+
+### Error Tracking Implementation
+
+```javascript
+// middleware/errorMiddleware.js
+const errorHandler = (err, req, res, next) => {
+  // Log error with context
+  console.error('Error:', {
+    message: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method,
+    userId: req.user?.id,
+    timestamp: new Date().toISOString()
+  });
+
+  // Send appropriate response
+  res.status(err.statusCode || 500).json({
+    success: false,
+    message: err.message || 'Server Error',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+};
+```
+
+### Health Check Endpoints
+
+```javascript
+// routes/health.js
+router.get('/health', async (req, res) => {
+  const health = {
+    uptime: process.uptime(),
+    timestamp: Date.now(),
+    status: 'OK',
+    checks: {}
+  };
+
+  // Database check
+  try {
+    await mongoose.connection.db.admin().ping();
+    health.checks.database = 'UP';
+  } catch (error) {
+    health.checks.database = 'DOWN';
+    health.status = 'DEGRADED';
+  }
+
+  // Cloudinary check
+  try {
+    await cloudinary.api.ping();
+    health.checks.cloudinary = 'UP';
+  } catch (error) {
+    health.checks.cloudinary = 'DOWN';
+  }
+
+  res.status(health.status === 'OK' ? 200 : 503).json(health);
+});
 ```
 
 ### Monitoring Tools (Recommended)
@@ -1603,31 +1815,311 @@ log.error('AI API call failed', error);
 
 ---
 
+## Scalability Considerations
+
+### Horizontal Scaling Strategy
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    LOAD BALANCER                         │
+│                  (nginx / AWS ALB)                       │
+└────────────────────┬────────────────────────────────────┘
+                     │
+        ┌────────────┼────────────┐
+        ▼            ▼            ▼
+   ┌────────┐  ┌────────┐  ┌────────┐
+   │ API    │  │ API    │  │ API    │
+   │ Server │  │ Server │  │ Server │
+   │ Node 1 │  │ Node 2 │  │ Node 3 │
+   └───┬────┘  └───┬────┘  └───┬────┘
+       │           │           │
+       └───────────┼───────────┘
+                   ▼
+          ┌─────────────────┐
+          │  MongoDB Atlas  │
+          │  Replica Set    │
+          └─────────────────┘
+```
+
+### Performance Optimization Techniques
+
+| Technique | Implementation | Impact |
+|-----------|----------------|--------|
+| **Database Indexing** | Index on userId, email, createdAt, type | 10-100x faster queries |
+| **Pagination** | Limit queries to 20-50 results | Reduced memory, faster response |
+| **Caching** | Redis for frequent queries (optional) | 80-95% faster reads |
+| **Compression** | Gzip response compression | 60-80% bandwidth reduction |
+| **Connection Pooling** | Mongoose default pool (5) | Reduced latency |
+| **CDN** | Cloudinary CDN for images | 50-70% faster image loads |
+| **Code Splitting** | Next.js automatic splitting | 30-50% smaller bundles |
+| **Image Optimization** | Next.js Image, WebP format | 40-60% smaller images |
+
+### Database Optimization
+
+**Indexes:**
+```javascript
+// User model indexes
+userSchema.index({ email: 1 });
+userSchema.index({ type: 1, isVerified: 1 });
+
+// Consultation model indexes
+consultationSchema.index({ user: 1, createdAt: -1 });
+consultationSchema.index({ urgency: 1, createdAt: -1 });
+
+// Appointment model indexes
+appointmentSchema.index({ patient: 1, status: 1 });
+appointmentSchema.index({ doctor: 1, appointmentDate: 1 });
+```
+
+**Query Optimization:**
+```javascript
+// Bad: Load all fields
+const users = await User.find();
+
+// Good: Select only needed fields
+const users = await User.find().select('name email type');
+
+// Good: Pagination
+const page = parseInt(req.query.page) || 1;
+const limit = parseInt(req.query.limit) || 20;
+const skip = (page - 1) * limit;
+
+const consultations = await Consultation.find({ user: userId })
+  .sort({ createdAt: -1 })
+  .skip(skip)
+  .limit(limit)
+  .select('symptoms urgency createdAt');
+```
+
+### Caching Strategy (Future Enhancement)
+
+```javascript
+// Example Redis caching for user profiles
+const getUser = async (userId) => {
+  // Try cache first
+  const cached = await redis.get(`user:${userId}`);
+  if (cached) return JSON.parse(cached);
+
+  // If not cached, query database
+  const user = await User.findById(userId);
+  
+  // Cache for 1 hour
+  await redis.setex(`user:${userId}`, 3600, JSON.stringify(user));
+  
+  return user;
+};
+```
+
+---
+
+## Scalability Considerations
+
+### Horizontal Scaling Strategy
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    LOAD BALANCER                             │
+│                  (nginx / AWS ALB)                           │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+        ┌────────────────┼────────────────┐
+        ▼                ▼                ▼
+   ┌────────┐      ┌────────┐      ┌────────┐
+   │ API    │      │ API    │      │ API    │
+   │ Server │      │ Server │      │ Server │
+   │ Node 1 │      │ Node 2 │      │ Node 3 │
+   └───┬────┘      └───┬────┘      └───┬────┘
+       │               │               │
+       └───────────────┼───────────────┘
+                       ▼
+              ┌─────────────────┐
+              │  MongoDB Atlas  │
+              │  Replica Set    │
+              └─────────────────┘
+```
+
+### Performance Optimization Techniques
+
+| Technique | Implementation | Impact |
+|-----------|----------------|--------|
+| **Database Indexing** | Index on userId, email, createdAt, type | 10-100x faster queries |
+| **Pagination** | Limit queries to 20-50 results | Reduced memory, faster response |
+| **Caching** | Redis for frequent queries (optional) | 80-95% faster reads |
+| **Compression** | Gzip response compression | 60-80% bandwidth reduction |
+| **Connection Pooling** | Mongoose default pool (5) | Reduced latency |
+| **CDN** | Cloudinary CDN for images | 50-70% faster image loads |
+| **Code Splitting** | Next.js automatic splitting | 30-50% smaller bundles |
+| **Image Optimization** | Next.js Image, WebP format | 40-60% smaller images |
+
+### Database Optimization
+
+**Indexes:**
+```javascript
+// User model indexes
+userSchema.index({ email: 1 });
+userSchema.index({ type: 1, isVerified: 1 });
+
+// Consultation model indexes
+consultationSchema.index({ user: 1, createdAt: -1 });
+consultationSchema.index({ urgency: 1, createdAt: -1 });
+
+// Appointment model indexes
+appointmentSchema.index({ patient: 1, status: 1 });
+appointmentSchema.index({ doctor: 1, appointmentDate: 1 });
+```
+
+**Query Optimization:**
+```javascript
+// Bad: Load all fields
+const users = await User.find();
+
+// Good: Select only needed fields
+const users = await User.find().select('name email type');
+
+// Good: Pagination
+const page = parseInt(req.query.page) || 1;
+const limit = parseInt(req.query.limit) || 20;
+const skip = (page - 1) * limit;
+
+const consultations = await Consultation.find({ user: userId })
+  .sort({ createdAt: -1 })
+  .skip(skip)
+  .limit(limit)
+  .select('symptoms urgency createdAt');
+```
+
+### Caching Strategy (Future Enhancement)
+
+```javascript
+// Example Redis caching for user profiles
+const redis = require('redis');
+const client = redis.createClient();
+
+const getUser = async (userId) => {
+  // Try cache first
+  const cached = await client.get(`user:${userId}`);
+  if (cached) return JSON.parse(cached);
+
+  // If not cached, query database
+  const user = await User.findById(userId);
+  
+  // Cache for 1 hour
+  await client.setex(`user:${userId}`, 3600, JSON.stringify(user));
+  
+  return user;
+};
+```
+
+---
+
 ## Conclusion
 
 This architecture provides:
 
-1. **Scalability** - Stateless API, cloud storage, managed database
-2. **Security** - JWT auth, role-based access, input validation, rate limiting
-3. **Maintainability** - Clear separation of concerns, consistent patterns
-4. **Performance** - CDN, compression, indexing, pagination
+1. **Scalability** - Stateless API, cloud storage, managed database, horizontal scaling ready
+2. **Security** - JWT auth, role-based access, input validation, rate limiting, HTTPS
+3. **Maintainability** - Clear separation of concerns, consistent patterns, modular design
+4. **Performance** - CDN, compression, database indexing, pagination, query optimization
 5. **AI Integration** - Google Gemini for health analysis, OpenAI Vision for OCR
 6. **Healthcare Focus** - HIPAA-ready design, audit logging, data retention policies
-7. **Developer Experience** - TypeScript, hot reload, modern frameworks
+7. **Developer Experience** - TypeScript, hot reload, modern frameworks, clear documentation
 8. **Production Ready** - Error handling, monitoring, logging, deployment guides
+9. **Payment Integration** - Stripe for subscriptions, webhooks for automation
+10. **Real-time Features** - Meeting requests, SOS alerts, notifications
 
-### Technology Highlights
+### Technology Stack
 
-- **Frontend**: Next.js 16 + React 18 + TypeScript + Redux Toolkit
-- **Backend**: Express.js + MongoDB + Mongoose
-- **AI**: Google Gemini AI + OpenAI Vision API
-- **Storage**: Cloudinary CDN
-- **Communication**: Nodemailer (email) + Twilio (SMS)
-- **Deployment**: Vercel (frontend) + Railway (backend) + MongoDB Atlas
+**Frontend:**
+- Next.js 16.1.1 (App Router)
+- React 18.3.1
+- TypeScript 5.x
+- TailwindCSS 4.x
+- Redux Toolkit 2.11.2
+
+**Backend:**
+- Node.js 20.x
+- Express.js 5.2.1
+- MongoDB 9.0.2
+- Mongoose 9.0.2
+
+**AI & ML:**
+- Google Gemini AI 0.24.1 (Symptom analysis, diary summaries)
+- OpenAI 6.15.0 (Vision API for OCR, GPT-4)
+
+**Storage & CDN:**
+- Cloudinary 2.8.0 (Image/document storage)
+- MongoDB Atlas (Database hosting)
+
+**Communication:**
+- Nodemailer 7.0.12 (Email)
+- Twilio 5.11.2 (SMS alerts)
+
+**Payment Processing:**
+- Stripe 20.1.2 (Subscriptions, payments)
+
+**Background Jobs:**
+- node-cron 4.2.1 (Scheduled tasks)
+- rss-parser 3.13.0 (News fetching)
+
+**Deployment:**
+- Vercel (Frontend)
+- Railway/Render (Backend)
+- MongoDB Atlas (Database)
+- Cloudinary (CDN)
+
+### Production Readiness Checklist
+
+✅ **Security**
+- [x] HTTPS/TLS encryption
+- [x] JWT authentication
+- [x] Password hashing (bcrypt)
+- [x] Input sanitization
+- [x] Rate limiting
+- [x] CORS configuration
+- [x] Security headers (Helmet)
+
+✅ **Scalability**
+- [x] Stateless API design
+- [x] Cloud storage (Cloudinary)
+- [x] Managed database (MongoDB Atlas)
+- [x] CDN for static assets
+- [x] Database indexing
+- [x] Pagination implemented
+
+✅ **Reliability**
+- [x] Error handling middleware
+- [x] Health check endpoints
+- [x] Database connection pooling
+- [x] Graceful error responses
+- [x] Webhook retry logic (Stripe)
+
+✅ **Monitoring**
+- [x] Structured logging
+- [x] Error tracking setup
+- [x] AI usage tracking
+- [x] Token cost monitoring
+- [ ] APM integration (recommended)
+- [ ] Real-time alerts (recommended)
+
+✅ **Documentation**
+- [x] API endpoint documentation
+- [x] Architecture documentation
+- [x] Database schema documentation
+- [x] Deployment guides
+- [x] Environment setup
+
+### Future Enhancements
+
+**Phase 2 (Planned):**
+- [ ] Redis caching layer
+- [ ] WebSocket for real-time updates
+- [ ] GraphQL API (alternative)
+- [ ] Mobile app (React Native)
+- [ ] Advanced analytics dashboard
+- [ ] Multi-language support
+- [ ] Video consultation integration
+- [ ] Blockchain for medical records
+- [ ] Telemedicine compliance (HIPAA, GDPR)
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** January 11, 2026  
-**Author:** LifeDoc Development Team  
-**Status:** ✅ Production Ready
