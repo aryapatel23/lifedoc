@@ -71,6 +71,14 @@ const AppointmentsPage = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validate future date/time
+        const selectedDateTime = new Date(`${formData.date}T${formData.time}`);
+        if (selectedDateTime <= new Date()) {
+            alert('Please select a future date and time for your appointment.');
+            return;
+        }
+
         const doctorId = searchParams.get('doctorId');
         try {
             const payload = { ...formData, doctorId: doctorId || undefined };
@@ -81,9 +89,11 @@ const AppointmentsPage = () => {
                 setAppointments([...appointments, response.data.data]);
                 setShowModal(false);
                 setFormData({ providerName: '', type: 'Doctor', date: '', time: '', notes: '' });
+                alert('Appointment booked successfully!');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error creating appointment:', error);
+            alert(error.response?.data?.message || 'Failed to book appointment');
         }
     };
 

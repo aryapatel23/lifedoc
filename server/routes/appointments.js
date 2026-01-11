@@ -3,6 +3,7 @@ const router = express.Router();
 const appointmentController = require('./appointmentController');
 const auth = require('../middleware/authMiddleware'); // Corrected path
 
+router.get('/doctor-appointments', auth, appointmentController.getDoctorAppointments);
 router.post('/', auth, appointmentController.createAppointment);
 router.get('/', auth, appointmentController.getAppointments);
 router.get('/:id', auth, appointmentController.getAppointmentById);

@@ -45,6 +45,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
 
     if (user?.type === 'doctor') {
         navItems.unshift({ name: 'Doctor Dashboard', path: '/doctor/dashboard', icon: FaUserMd });
+        navItems.push({ name: 'Patient Appointments', path: '/doctor/appointments', icon: FaCalendarAlt });
     }
 
 
