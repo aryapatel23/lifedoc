@@ -16,9 +16,9 @@
   body {
     font-family: 'Plus Jakarta Sans', sans-serif;
     background-color: #FAFFF5;
-    /* Cream/White from palette */
     color: #2C2C2C;
-    /* Dark Grey from palette */
+    top: 0 !important;
+    /* Prevent Google Translate shift */
   }
 }
 
@@ -52,4 +52,62 @@
   .input-field {
     @apply w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#7A8E6B] focus:ring-2 focus:ring-[#7A8E6B]/20 outline-none transition-all;
   }
+
+  /* Animation for Language Switcher */
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out forwards;
+  }
+}
+
+/* Base body styles */
+/* Google Translate Shift Fix - SUPER AGGRESSIVE */
+body {
+  top: 0 !important;
+  position: static !important;
+  min-height: 100vh !important;
+  /* Ensure min-height matches view */
+  margin-top: 0 !important;
+}
+
+html {
+  top: 0 !important;
+  margin-top: 0 !important;
+}
+
+/* Hide Google Translate UI Elements Aggressively */
+.goog-te-banner-frame.skiptranslate,
+.goog-te-banner-frame,
+.skiptranslate,
+iframe[name="goog-te-banner-frame"],
+.goog-te-gadget-icon,
+#goog-gt-tt,
+.goog-tooltip,
+.goog-te-balloon-frame {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: -1000 !important;
+  position: absolute !important;
+  top: -9999px !important;
+}
+
+.goog-text-highlight {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }

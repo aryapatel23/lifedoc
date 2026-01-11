@@ -42,7 +42,35 @@ const userSchema = new mongoose.Schema({
     storyDesc: { type: String } // AI generated summary of user's lifestyle
   },
 
+  subscription: {
+    plan: { type: String, enum: ['free', 'plus', 'premium', 'family'], default: 'free' },
+    status: { type: String, enum: ['active', 'inactive', 'canceled', 'past_due'], default: 'active' },
+    stripeCustomerId: { type: String },
+    stripeSubscriptionId: { type: String },
+    startDate: { type: Date },
+    endDate: { type: Date }
+  },
+
+  usage: {
+    aiConsultations: { type: Number, default: 0 },
+    ocrScans: { type: Number, default: 0 },
+    lastResetDate: { type: Date, default: Date.now }
+  },
+
   sosContacts: [sosContactSchema],
+
+  availability: {
+    days: [{ type: String }], // Mon, Tue, Wed, nm...
+    workingHours: {
+      start: { type: String }, // e.g., "09:00"
+      end: { type: String }    // e.g., "17:00"
+    },
+    lunchBreak: {
+      start: { type: String }, // e.g., "13:00"
+      end: { type: String }    // e.g., "14:00"
+    },
+    slotDuration: { type: Number, default: 30 } // in minutes
+  },
 
   emergencySettings: emergencySettingsSchema
 

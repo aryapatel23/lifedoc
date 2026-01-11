@@ -6,6 +6,11 @@ const appointmentSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    doctorId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: false // Optional because appointment could be with a lab
+    },
     providerName: {
         type: String,
         required: true
@@ -22,6 +27,11 @@ const appointmentSchema = new mongoose.Schema({
     time: {
         type: String,
         required: true
+    },
+    mode: {
+        type: String,
+        enum: ['Online', 'Offline'],
+        default: 'Online'
     },
     notes: {
         type: String

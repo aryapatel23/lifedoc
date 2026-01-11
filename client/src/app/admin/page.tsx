@@ -93,7 +93,7 @@ export default function AdminDashboard() {
         now.setMinutes(0);
         const localIso = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
 
-        setApprovalForm({ meetingLink: "https://meet.google.com/new", scheduledAt: localIso });
+        setApprovalForm({ meetingLink: "https://meet.google.com/new", scheduledAt: localIso, duration: 60 });
     };
 
     const handleConfirmApprove = async () => {
@@ -210,7 +210,7 @@ export default function AdminDashboard() {
                             <VitalsCard title="Total Users" value={stats?.users || 0} unit="" icon={FaUsers} colorClass="text-blue-600 bg-blue-50" trend="stable" trendValue="" />
                             <VitalsCard title="Doctors" value={stats?.doctors || 0} unit="" icon={FaUserMd} colorClass="text-green-600 bg-green-50" trend="stable" trendValue="" />
                             <VitalsCard title="Appointments" value={stats?.appointments || 0} unit="" icon={FaClipboardList} colorClass="text-purple-600 bg-purple-50" trend="stable" trendValue="" />
-                            <VitalsCard title="Pending Verifications" value={verifications.length} unit="" icon={FaUserMd} colorClass="text-orange-600 bg-orange-50" trend={verifications.length > 0 ? "active" : "stable"} trendValue={verifications.length > 0 ? "Action Needed" : "All Clear"} />
+                            <VitalsCard title="Pending Verifications" value={verifications.length} unit="" icon={FaUserMd} colorClass="text-orange-600 bg-orange-50" trend={verifications.length > 0 ? "up" : "stable"} trendValue={verifications.length > 0 ? "Action Needed" : "All Clear"} />
                         </div>
 
                         {/* Meeting Requests Table */}

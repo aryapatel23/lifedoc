@@ -8,6 +8,8 @@ import { createLabReport, analyzeLabReport } from '@/store/slices/labReportsSlic
 import { useRouter } from 'next/navigation';
 import { FaArrowLeft, FaCloudUploadAlt, FaFlask, FaMagic, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
 
+import PricingModal from '@/components/PricingModal';
+
 export default function NewLabReportPage() {
     const dispatch = useDispatch<AppDispatch>();
     const router = useRouter();
@@ -20,6 +22,8 @@ export default function NewLabReportPage() {
     const [fileUrl, setFileUrl] = useState(''); // Base64 string
     const [analyzing, setAnalyzing] = useState(false);
     const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+    const [showPricingModal, setShowPricingModal] = useState(false);
+    const [limitMessage, setLimitMessage] = useState('');
     const loadingMessages = [
         "Analyzing lab report...",
         "Extracting test results...",
@@ -102,6 +106,15 @@ export default function NewLabReportPage() {
                     const summaryText = `Total Tests: ${data.summary.totalTests}, Abnormal: ${data.summary.abnormalTests}. ${data.summary.criticalFindings ? 'CRITICAL FINDINGS DETECTED.' : ''}`;
                     setNotes(prev => prev ? `${prev}\n\nAI Analysis: ${summaryText}` : `AI Analysis: ${summaryText}`);
                 }
+            } else {
+                // Handle Rejection
+                const payload = resultAction.payload as any;
+                if (payload?.isLimitReached) {
+                    setLimitMessage(payload.message);
+                    setShowPricingModal(true);
+                } else {
+                    alert(payload?.message || "Failed to analyze report.");
+                }
             }
         } catch (error) {
             console.error("Analysis failed", error);
@@ -140,6 +153,12 @@ export default function NewLabReportPage() {
     return (
         <ProtectedRoute>
             <DashboardLayout>
+                <PricingModal
+                    isOpen={showPricingModal}
+                    onClose={() => setShowPricingModal(false)}
+                    message={limitMessage}
+                />
+
                 <header className="flex items-center mb-8">
                     <button
                         onClick={() => router.back()}

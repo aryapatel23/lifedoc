@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FaHome, FaHeartbeat, FaBookMedical, FaFileMedical, FaUserMd, FaSignOutAlt, FaMicrophone, FaCamera, FaUser, FaLightbulb, FaCalendarAlt, FaUsers, FaBell, FaHistory } from 'react-icons/fa';
+import { FaHome, FaHeartbeat, FaBookMedical, FaFileMedical, FaUserMd, FaSignOutAlt, FaMicrophone, FaCamera, FaUser, FaLightbulb, FaCalendarAlt, FaUsers, FaBell, FaHistory, FaStar, FaCog } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { logoutUser } from '@/store/slices/authSlice';
@@ -34,6 +34,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
         { name: 'Lab Reports', path: '/lab-reports', icon: FaFileMedical },
         { name: 'Doctor Reports', path: '/doctor-reports', icon: FaUserMd },
         { name: 'Appointments', path: '/appointments', icon: FaCalendarAlt },
+        { name: 'Doctors', path: '/doctors', icon: FaUserMd },
         { name: 'Family Health', path: '/family', icon: FaUsers },
         { name: 'Insights', path: '/insights', icon: FaLightbulb },
     ];
@@ -44,6 +45,8 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
 
     if (user?.type === 'doctor') {
         navItems.unshift({ name: 'Doctor Dashboard', path: '/doctor/dashboard', icon: FaUserMd });
+        navItems.push({ name: 'Patient Appointments', path: '/doctor/appointments', icon: FaCalendarAlt });
+        navItems.push({ name: 'Setup Details', path: '/doctor/setup', icon: FaCog });
     }
 
 
@@ -57,7 +60,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
             />
 
             {/* Sidebar */}
-            <div className={`h-screen w-72 bg-white border-r border-gray-200 fixed left-0 top-0 z-50 flex flex-col font-sans transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'
+            <div className={`h-screen w-72 bg-white border-r ${['plus', 'premium', 'family'].includes(user?.subscription?.plan || '') ? 'border-amber-200' : 'border-gray-200'} fixed left-0 top-0 z-50 flex flex-col font-sans transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'
                 }`}>
                 <div className="p-8">
                     <h1 className="text-2xl font-extrabold flex items-center space-x-2 text-gray-900 tracking-tight">
@@ -65,12 +68,13 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                     </h1>
                 </div>
 
-                <nav className="flex-1 px-4 space-y-2 overflow-y-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <nav id="onboarding-sidebar" className="flex-1 px-4 space-y-2 overflow-y-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                     {navItems.map((item) => {
                         const isActive = pathname === item.path;
                         return (
                             <Link
                                 key={item.path}
+                                id={`sidebar-nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
                                 href={item.path}
                                 onClick={onClose} // Close sidebar on nav click (mobile)
                                 className={`flex items-center space-x-3 px-5 py-3.5 rounded-sm transition-all duration-300 group ${isActive
@@ -86,6 +90,8 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                 </nav>
 
                 <div className="p-4 border-t border-gray-100 space-y-2">
+
+
                     <div className="flex items-center justify-between px-4 py-2 bg-gray-50 rounded-lg">
                         <span className="text-xs font-bold text-gray-500 uppercase">Settings & Accessibility</span>
                     </div>

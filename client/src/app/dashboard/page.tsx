@@ -12,7 +12,12 @@ import { FaHeartbeat, FaTint, FaWeight, FaCalendarCheck, FaMicrophone, FaFileMed
 // Components
 import VitalsCard from '@/components/dashboard/VitalsCard';
 import HealthTrendChart from '@/components/dashboard/HealthTrendChart';
+
 import HealthNewsWidget from '@/components/dashboard/HealthNewsWidget';
+import OnboardingTour from '@/components/OnboardingTour';
+
+
+
 import UpcomingAppointments from '@/components/dashboard/UpcomingAppointments';
 import DashboardSkeleton from '@/components/dashboard/DashboardSkeleton';
 
@@ -87,6 +92,7 @@ export default function Dashboard() {
         <ProtectedRoute>
             <DashboardLayout>
                 <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 animate-fade-in-up">
+                    <OnboardingTour isNewUser={measurements.length === 0} userId={user?.id || ''} />
                     <div>
                         <p className="text-gray-400 text-sm font-semibold uppercase tracking-wider mb-1">Overview</p>
                         <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900">
@@ -100,7 +106,7 @@ export default function Dashboard() {
 
                 {/* Hero / Quick Actions */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-                    <div className="lg:col-span-2 relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#17252A] to-[#2B7A78] shadow-lg group">
+                    <div id="onboarding-ai-assistant" className="lg:col-span-2 relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#17252A] to-[#2B7A78] shadow-lg group">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:opacity-10 transition-opacity duration-700"></div>
 
                         <div className="relative z-10 p-8 flex flex-col items-start h-full justify-between">
@@ -121,7 +127,7 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    <Link href="/lab-reports" className="group relative overflow-hidden rounded-2xl bg-white border border-gray-100 p-8 flex flex-col justify-between hover:border-[#3AAFA9]/50 hover:shadow-lg transition-all duration-300">
+                    <Link id="onboarding-lab-reports" href="/lab-reports" className="group relative overflow-hidden rounded-2xl bg-white border border-gray-100 p-8 flex flex-col justify-between hover:border-[#3AAFA9]/50 hover:shadow-lg transition-all duration-300">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-[#3AAFA9] opacity-5 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-500"></div>
 
                         <div className="flex items-start justify-between mb-6 relative z-10">
@@ -141,7 +147,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Vitals Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div id="onboarding-vitals" className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                     <VitalsCard
                         title="Glucose"
                         value={latestGlucose ? String(latestGlucose.value) : '--'}

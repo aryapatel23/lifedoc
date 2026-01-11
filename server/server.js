@@ -16,6 +16,7 @@ const savedPostRoutes = require("./routes/savedPosts");
 const shareRoutes = require("./routes/share");
 const { startCronJob } = require("./jobs/newsFetcher");
 const compression = require("compression");
+const errorMiddleware = require("./middleware/errorMiddleware");
 
 const app = express();
 dotenv.config();
@@ -26,7 +27,13 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // Increase payload limit to 50mb
-app.use(express.json({ limit: '50mb' }));
+// Increase payload limit to 50mb and preserve raw body for Stripe
+app.use(express.json({
+  limit: '50mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors());
 app.use(compression()); // Enable Gzip/Brotli compression
@@ -55,9 +62,17 @@ app.use("/api/family", familyRoutes);
 app.use("/api/saved-posts", savedPostRoutes);
 app.use("/api/share", shareRoutes);
 app.use("/api/admin", require("./routes/adminRoutes"));
+console.log("Loading SOS Routes...");
+app.use("/api/sos", require("./routes/sos")); // <--- SOS Feature
 app.use("/api/doctor-verification", require("./routes/doctorVerification"));
 app.use("/api/consultation", require("./routes/consultation"));
+app.use("/api/consultation", require("./routes/consultation"));
 app.use("/api/meetings", require("./routes/meetings"));
+app.use("/api/doctors", require("./routes/doctors"));
+app.use("/api/subscription", require("./routes/subscription"));
+
+
+
 
 
 
@@ -68,10 +83,7 @@ app.use((req, res, next) => {
 });
 
 // Global Error Handler
-app.use((err, req, res, next) => {
-  console.error('[ERROR] Server Error:', err);
-  res.status(500).json({ message: "Internal Server Error", error: err.message });
-});
+app.use(errorMiddleware);
 
 const PORT = process.env.SERVER_PORT || 5000;
 

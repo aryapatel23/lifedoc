@@ -1,36 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const { OpenAI } = require('openai');
-const dotenv = require('dotenv');
-const fs = require('fs');
 const path = require('path');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-
-dotenv.config();
-
+const fs = require('fs');
+const aiService = require('../services/aiService');
 const auth = require('../middleware/authMiddleware');
+const checkUsageLimit = require('../middleware/usageMiddleware');
 const Consultation = require('../models/Consultation');
 const Prescription = require('../models/Prescription');
 const LabReport = require('../models/LabReport');
 const User = require('../models/User');
 
-router.post('/analyze', auth, async (req, res) => {
-    const { text, language } = req.body;
-
-    if (!process.env.GEMINI_API_KEY) {
-        console.error("Server Error: GEMINI_API_KEY is missing from environment variables.");
-        return res.status(500).json({ msg: 'Server Configuration Error: API Key missing.' });
-    }
-
-    // Initialize Gemini
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-
-    if (!text) {
-        return res.status(400).json({ msg: 'Please provide symptom text' });
-    }
-
+// POST /api/ai/analyze
+// Desc: Analyze symptoms
+router.post('/analyze', auth, checkUsageLimit('consultation'), async (req, res, next) => {
     try {
+        const { text, language } = req.body;
+
+        if (!text) {
+            return res.status(400).json({ msg: 'Please provide symptom text' });
+        }
+
         const prompt = `
         You are Docmetry, an AI medical assistant. 
         Analyze the following symptom description from a patient: "${text}"
@@ -49,125 +38,82 @@ router.post('/analyze', auth, async (req, res) => {
         3. If the input is nonsense, politely ask for clarification in the summary.
         `;
 
-        const result = await model.generateContent({
-            contents: [{ role: "user", parts: [{ text: prompt }] }],
-            generationConfig: { responseMimeType: "application/json" }
-        });
+        const { data, usage } = await aiService.generateGeminiContent(prompt, "gemini-flash-latest");
 
-        const response = await result.response;
-        const textResponse = response.text();
-
-        let aiResult;
-        try {
-            aiResult = JSON.parse(textResponse);
-        } catch (e) {
-            // Fallback cleaning
-            const cleanText = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-            aiResult = JSON.parse(cleanText);
-        }
-
-        // Estimate usage if not provided by API (Gemini often includes it in usageMetadata, but fallback is simple char count)
-        const promptTokens = Math.ceil(prompt.length / 4);
-        const completionTokens = Math.ceil(textResponse.length / 4);
-        const totalTokens = promptTokens + completionTokens;
+        // Increment Usage
+        if (req.incrementUsage) await req.incrementUsage();
 
         // Save to Database
         const newConsultation = new Consultation({
             user: req.user.id,
             symptoms: text,
-            aiSummary: aiResult.summary,
-            urgency: aiResult.urgency,
-            actions: aiResult.actions || [],
-            lifestyleAdvice: aiResult.lifestyleAdvice || [],
-            suggestedMedicines: aiResult.suggestedMedicines || [],
+            aiSummary: data.summary,
+            urgency: data.urgency,
+            actions: data.actions || [],
+            lifestyleAdvice: data.lifestyleAdvice || [],
+            suggestedMedicines: data.suggestedMedicines || [],
             language: language || 'en',
-            tokenUsage: {
-                promptTokens,
-                completionTokens,
-                totalTokens
-            }
+            tokenUsage: usage
         });
 
         await newConsultation.save();
 
         res.json({
-            ...aiResult,
+            ...data,
             _id: newConsultation._id,
             reviewStatus: newConsultation.reviewStatus
         });
     } catch (err) {
-        console.error("Gemini AI Error:", err.message);
-        res.status(500).json({ msg: 'Error processing AI request', error: err.message });
+        next(err);
     }
 });
 
 // POST /api/ai/analyze-prescription
 // Desc: Analyze prescription image using Vision model
-router.post('/analyze-prescription', auth, async (req, res) => {
-    const { image } = req.body; // Base64 image string
-
-    if (!process.env.OPENAI_API_KEY) {
-        return res.status(500).json({ msg: 'Server Configuration Error: API Key missing.' });
-    }
-
-    const openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-    });
-
-    if (!image) {
-        return res.status(400).json({ msg: 'Please upload an image' });
-    }
-
+router.post('/analyze-prescription', auth, checkUsageLimit('ocr'), async (req, res, next) => {
     try {
+        const { image } = req.body; // Base64 image string
+
+        if (!image) {
+            return res.status(400).json({ msg: 'Please upload an image' });
+        }
+
         const prompt = `
-    You are an expert pharmacist and doctor assistant.
-    Analyze this prescription image. 
-    
-    Extract the following details in strict JSON format:
-    - medicines: array of objects { name, dosage, timing (e.g., "Morning-Night"), precaution (e.g., "After food") }
-    - audioSummary: A simple, clear paragraph explaining to the patient how to take their medicines in plain language (e.g., "You have 3 medicines. Take the Paracetamol after lunch...").
-    
-    If you cannot read the prescription or if it's not a prescription, return an error message in the summary.
-    `;
+        You are an expert pharmacist and doctor assistant.
+        Analyze this prescription image. 
+        
+        Extract the following details in strict JSON format:
+        - medicines: array of objects { name, dosage, timing (e.g., "Morning-Night"), precaution (e.g., "After food") }
+        - audioSummary: A simple, clear paragraph explaining to the patient how to take their medicines in plain language (e.g., "You have 3 medicines. Take the Paracetamol after lunch...").
+        
+        If you cannot read the prescription or if it's not a prescription, return an error message in the summary.
+        `;
 
-        const response = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-                {
-                    role: "user",
-                    content: [
-                        { type: "text", text: prompt },
-                        { type: "image_url", image_url: { url: image } }
-                    ]
-                }
-            ],
-            max_tokens: 1000,
-            response_format: { type: "json_object" },
-        });
+        const data = await aiService.generateOpenAIVisionContent(prompt, image);
 
-        const aiResult = JSON.parse(response.choices[0].message.content);
+        // Increment Usage
+        if (req.incrementUsage) await req.incrementUsage();
 
         // Save to Database
         const newPrescription = new Prescription({
             user: req.user.id,
-            image: image, // Note: Storing Base64 in Mongo is not ideal for prod, but OK for this demo
-            medicines: aiResult.medicines,
-            audioSummary: aiResult.audioSummary
+            image: image,
+            medicines: data.medicines,
+            audioSummary: data.audioSummary
         });
 
         await newPrescription.save();
 
-        res.json(aiResult);
+        res.json(data);
 
     } catch (err) {
-        console.error("Vision AI Error:", err.message);
-        res.status(500).json({ msg: 'Error analyzing image', error: err.message });
+        next(err);
     }
 });
 
 // POST /api/ai/summerizer
 // Desc: Summarize diary entry using Gemini
-router.post('/summerizer', auth, async (req, res) => {
+router.post('/summerizer', auth, async (req, res, next) => {
     try {
         const { prompt } = req.query; // e.g. "diarySummerizer"
         const { text, date } = req.body;
@@ -183,49 +129,22 @@ router.post('/summerizer', auth, async (req, res) => {
         }
 
         const basePrompt = fs.readFileSync(promptPath, 'utf8');
-
-        if (!process.env.GEMINI_API_KEY) {
-            console.error("Server Error: GEMINI_API_KEY is missing.");
-            return res.status(500).json({ msg: 'Server Configuration Error: API Key missing.' });
-        }
-
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        // Using gemini-flash-latest which was verified to work
-        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-
         const fullPrompt = `${basePrompt}\n\nUser Diary Entry (${date || 'Today'}):\n${text}\n\nOutput JSON:`;
 
-        const result = await model.generateContent({
-            contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
-            generationConfig: { responseMimeType: "application/json" } // Force JSON
-        });
+        const { data } = await aiService.generateGeminiContent(fullPrompt, "gemini-flash-latest");
 
-        const response = await result.response;
-        const textResponse = response.text();
-
-        // Parse JSON safely
-        let aiResult;
-        try {
-            aiResult = JSON.parse(textResponse);
-        } catch (e) {
-            // Fallback cleanup if not pure JSON
-            const cleanText = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-            aiResult = JSON.parse(cleanText);
-        }
-
-        res.json(aiResult);
+        res.json(data);
 
     } catch (err) {
-        console.error("Gemini AI Error:", err.message);
-        res.status(500).json({ msg: 'Error processing AI request', error: err.message });
+        next(err);
     }
 });
 
 // POST /api/ai/analyze-lab-report
 // Desc: Analyze lab report image/PDF using Gemini
-router.post('/analyze-lab-report', auth, async (req, res) => {
+router.post('/analyze-lab-report', auth, checkUsageLimit('ocr'), async (req, res, next) => {
     try {
-        const { image, notes, reportDate: userDate, testType: userTestType } = req.body; // Base64 string and optional overrides
+        const { image, notes, reportDate: userDate, testType: userTestType } = req.body;
 
         if (!image) {
             return res.status(400).json({ msg: 'Please upload a lab report image' });
@@ -238,48 +157,9 @@ router.post('/analyze-lab-report', auth, async (req, res) => {
         }
         const systemPrompt = fs.readFileSync(promptPath, 'utf8');
 
-        if (!process.env.GEMINI_API_KEY) {
-            return res.status(500).json({ msg: 'Server Configuration Error: API Key missing.' });
-        }
+        const { data: aiResult } = await aiService.generateGeminiVisionContent(systemPrompt, image, "image/jpeg", "gemini-2.0-flash");
 
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-        // Prepare image part
-        let mimeType = "image/jpeg"; // Default
-        let base64Data = image;
-
-        if (image.includes("base64,")) {
-            const parts = image.split(";base64,");
-            mimeType = parts[0].split(":")[1];
-            base64Data = parts[1];
-        }
-
-        const imagePart = {
-            inlineData: {
-                data: base64Data,
-                mimeType: mimeType
-            }
-        };
-
-        const result = await model.generateContent({
-            contents: [
-                {
-                    role: "user",
-                    parts: [
-                        { text: systemPrompt },
-                        imagePart
-                    ]
-                }
-            ],
-            generationConfig: { responseMimeType: "application/json" }
-        });
-
-        const response = await result.response;
-        const textResponse = response.text();
-        const aiResult = JSON.parse(textResponse);
-
-        // Determine test type and date (User overrides take precedence if provided, otherwise AI)
+        // Determine test type and date
         const finalReportDate = userDate ? new Date(userDate) : (aiResult.labReport?.reportDate ? new Date(aiResult.labReport.reportDate) : new Date());
 
         let finalTestType = userTestType || "General Lab Report";
@@ -305,8 +185,8 @@ router.post('/analyze-lab-report', auth, async (req, res) => {
             reportDate: finalReportDate,
             testType: finalTestType,
             parsedResults: aiResult,
-            fileUrl: cloudinaryUrl || image, // Use Cloudinary URL if available, else fallback to base64
-            originalReport: cloudinaryUrl, // Keep this for now as per previous request
+            fileUrl: cloudinaryUrl || image,
+            originalReport: cloudinaryUrl,
             notes: notes || "Analyzed by AI"
         });
 
@@ -319,23 +199,15 @@ router.post('/analyze-lab-report', auth, async (req, res) => {
         });
 
     } catch (err) {
-        console.error("Lab Report Analysis Error:", err.message);
-        res.status(500).json({ msg: 'Error analyzing lab report', error: err.message });
+        next(err);
     }
 });
 
 // POST /api/ai/generate-questions
 // Desc: Generate lifestyle questions based on chronic conditions
-router.post('/generate-questions', auth, async (req, res) => {
+router.post('/generate-questions', auth, async (req, res, next) => {
     try {
-        const { diseases } = req.body; // Array of strings e.g. ["Diabetes", "None"]
-
-        if (!process.env.GEMINI_API_KEY) {
-            return res.status(500).json({ msg: 'Server Configuration Error: API Key missing.' });
-        }
-
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+        const { diseases } = req.body;
 
         const prompt = `
         You are a medical expert. The user has the following conditions: ${diseases && diseases.length > 0 ? diseases.join(", ") : "None"}.
@@ -367,38 +239,19 @@ router.post('/generate-questions', auth, async (req, res) => {
         Do not include markdown formatting.
         `;
 
-        const result = await model.generateContent({
-            contents: [{ role: "user", parts: [{ text: prompt }] }],
-            generationConfig: { responseMimeType: "application/json" }
-        });
-
-        const response = await result.response;
-        const textResponse = response.text();
-        const questions = JSON.parse(textResponse);
-
-        res.json(questions);
+        const { data } = await aiService.generateGeminiContent(prompt, "gemini-flash-latest");
+        res.json(data);
 
     } catch (err) {
-        console.error("Generate Questions Error:", err.message);
-        const fs = require('fs');
-        const path = require('path');
-        fs.writeFileSync(path.join(__dirname, '../error_log.txt'), `Error: ${err.message}\nStack: ${err.stack}\n`);
-        res.status(500).json({ msg: 'Error generating questions', error: err.message });
+        next(err);
     }
 });
 
 // POST /api/ai/analyze-lifestyle
 // Desc: Analyze answers and update user storyDesc
-router.post('/analyze-lifestyle', auth, async (req, res) => {
+router.post('/analyze-lifestyle', auth, async (req, res, next) => {
     try {
-        const { answers, diseases, additionalDetails, userProfile } = req.body; // answers: [{question, answer}], diseases: [], additionalDetails: string, userProfile: {}
-
-        if (!process.env.GEMINI_API_KEY) {
-            return res.status(500).json({ msg: 'Server Configuration Error: API Key missing.' });
-        }
-
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+        const { answers, diseases, additionalDetails, userProfile } = req.body;
 
         const prompt = `
         You are a medical expert. Analyze the following user profile and questionnaire answers.
@@ -428,26 +281,40 @@ router.post('/analyze-lifestyle', auth, async (req, res) => {
         }
         `;
 
-        const result = await model.generateContent({
-            contents: [{ role: "user", parts: [{ text: prompt }] }],
-            generationConfig: { responseMimeType: "application/json" }
-        });
+        const { data } = await aiService.generateGeminiContent(prompt, "gemini-flash-latest");
 
-        const response = await result.response;
-        const textResponse = response.text();
-        const aiResult = JSON.parse(textResponse);
-
-        // Update User Profile
-        // Note: storyDesc is inside the profile object in User model
         await User.findByIdAndUpdate(req.user.id, {
-            $set: { "profile.storyDesc": aiResult.summary }
+            $set: { "profile.storyDesc": data.summary }
         });
 
-        res.json(aiResult);
+        res.json(data);
 
     } catch (err) {
-        console.error("Analyze Lifestyle Error:", err.message);
-        res.status(500).json({ msg: 'Error analyzing lifestyle', error: err.message });
+        next(err);
+    }
+});
+
+// POST /api/ai/guide
+// Desc: General Voice Assistant Persona
+router.post('/guide', auth, async (req, res, next) => {
+    try {
+        const { text } = req.body;
+
+        // Read the prompt
+        const promptPath = path.join(__dirname, '../prompts/voicePersona.txt');
+        if (!fs.existsSync(promptPath)) {
+            return res.status(500).json({ msg: 'System Error: Prompt file missing' });
+        }
+        const systemPrompt = fs.readFileSync(promptPath, 'utf8');
+
+        const fullPrompt = `${systemPrompt}\n\nUser Question: "${text}"\n\nRespond as valid JSON:`;
+
+        const { data } = await aiService.generateGeminiContent(fullPrompt, "gemini-flash-latest");
+
+        res.json(data);
+
+    } catch (err) {
+        next(err);
     }
 });
 

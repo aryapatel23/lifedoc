@@ -5,7 +5,7 @@ Based on the success of our Round 1 Prototype, we have developed a comprehensive
 
 ---
 
-## 🚀 Phase 1: Critical Care & Safety (Months 1-2)
+## 🚀 Phase 1: Critical Care & Safety 
 
 ### 1. 🚨 Emergency SOS Network
 > *In a cardiac event, every minute lost kills heart muscle. LifeDoc bridges the gap between collapse and care.*
@@ -40,7 +40,7 @@ Based on the success of our Round 1 Prototype, we have developed a comprehensive
 
 ---
 
-## 🔮 Phase 2: Proactive Health Engines (Months 3-4)
+## 🔮 Phase 2: Proactive Health Engines 
 
 ### 4. 🎮 Health Gamification (LifeScore)
 *   **The Concept:** Turning adherence into a game. Users nurture a virtual "Health Tree" that grows when they take meds and shrinks when they miss them.
@@ -65,7 +65,7 @@ Based on the success of our Round 1 Prototype, we have developed a comprehensive
 
 ---
 
-## 🛡️ Phase 3: Trust & Infrastructure (Months 5-6)
+## 🛡️ Phase 3: Trust & Infrastructure
 
 ### 7. 🔗 Blockchain Health Passport
 *   **The Concept:** You own your data, not the hospital.

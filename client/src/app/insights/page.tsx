@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import axios from 'axios';
 import { FaBookmark, FaRegBookmark, FaImage } from 'react-icons/fa';
+import PremiumLock from '@/components/PremiumLock';
 
 interface Article {
     _id: string;
@@ -111,54 +112,59 @@ const InsightsPage = () => {
                     <p className="text-gray-600 mt-2">Latest news and articles to keep you informed.</p>
                 </header>
 
-                {loading ? (
-                    <div className="flex justify-center items-center h-64">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                    </div>
-                ) : error ? (
-                    <div className="bg-red-50 text-red-600 p-4 rounded-lg">{error}</div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {articles.map((article) => (
-                            <div key={article._id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
-                                <ArticleImage src={article.imageUrl} alt={article.title} />
-                                <div className="p-5 flex-1 flex flex-col">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center space-x-2">
-                                            <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                                                {article.source || 'News'}
-                                            </span>
-                                            <span className="text-xs text-gray-400">
-                                                {new Date(article.publishedAt).toLocaleDateString()}
-                                            </span>
+                <PremiumLock
+                    title="Unlock Daily Health Insights"
+                    description="Get access to curated latest medical news, research summaries, and personalized wellness articles."
+                >
+                    {loading ? (
+                        <div className="flex justify-center items-center h-64">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                        </div>
+                    ) : error ? (
+                        <div className="bg-red-50 text-red-600 p-4 rounded-lg">{error}</div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {articles.map((article) => (
+                                <div key={article._id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
+                                    <ArticleImage src={article.imageUrl} alt={article.title} />
+                                    <div className="p-5 flex-1 flex flex-col">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center space-x-2">
+                                                <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                                                    {article.source || 'News'}
+                                                </span>
+                                                <span className="text-xs text-gray-400">
+                                                    {new Date(article.publishedAt).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                            <button
+                                                onClick={() => toggleSave(article._id)}
+                                                className={`p-2 rounded-full transition-colors ${savedArticleIds.has(article._id) ? 'text-blue-600 bg-blue-50' : 'text-gray-400 hover:text-blue-500 hover:bg-gray-50'}`}
+                                                title={savedArticleIds.has(article._id) ? "Unsave" : "Save"}
+                                            >
+                                                {savedArticleIds.has(article._id) ? <FaBookmark /> : <FaRegBookmark />}
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={() => toggleSave(article._id)}
-                                            className={`p-2 rounded-full transition-colors ${savedArticleIds.has(article._id) ? 'text-blue-600 bg-blue-50' : 'text-gray-400 hover:text-blue-500 hover:bg-gray-50'}`}
-                                            title={savedArticleIds.has(article._id) ? "Unsave" : "Save"}
+                                        <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
+                                            {article.title}
+                                        </h3>
+                                        <p className="text-gray-600 text-sm mb-4 line-clamp-3 flex-1">
+                                            {article.description || 'No description available.'}
+                                        </p>
+                                        <a
+                                            href={article.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="mt-auto text-blue-600 font-medium text-sm hover:underline flex items-center"
                                         >
-                                            {savedArticleIds.has(article._id) ? <FaBookmark /> : <FaRegBookmark />}
-                                        </button>
+                                            Read full article &rarr;
+                                        </a>
                                     </div>
-                                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
-                                        {article.title}
-                                    </h3>
-                                    <p className="text-gray-600 text-sm mb-4 line-clamp-3 flex-1">
-                                        {article.description || 'No description available.'}
-                                    </p>
-                                    <a
-                                        href={article.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="mt-auto text-blue-600 font-medium text-sm hover:underline flex items-center"
-                                    >
-                                        Read full article &rarr;
-                                    </a>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                            ))}
+                        </div>
+                    )}
+                </PremiumLock>
             </div>
         </DashboardLayout>
     );

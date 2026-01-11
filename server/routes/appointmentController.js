@@ -2,15 +2,25 @@ const Appointment = require('../models/Appointment');
 
 exports.createAppointment = async (req, res) => {
     try {
-        const { providerName, type, date, time, notes } = req.body;
-        const userId = req.user.id; // Assuming auth middleware adds user to req
+        const { providerName, type, date, time, notes, doctorId, mode } = req.body;
+        const userId = req.user.id;
+
+        // Validate Date and Time
+        const appointmentDateTime = new Date(`${date}T${time}`);
+        const currentDateTime = new Date();
+
+        if (appointmentDateTime <= currentDateTime) {
+            return res.status(400).json({ success: false, message: 'Appointment time must be in the future.' });
+        }
 
         const newAppointment = new Appointment({
             userId,
+            doctorId,
             providerName,
             type,
             date,
             time,
+            mode: mode || 'Online',
             notes
         });
 
@@ -18,6 +28,27 @@ exports.createAppointment = async (req, res) => {
         res.status(201).json({ success: true, data: savedAppointment });
     } catch (error) {
         console.error('Error creating appointment:', error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+exports.getDoctorAppointments = async (req, res) => {
+    try {
+        // Ensure the user is a doctor
+        if (req.user.type !== 'doctor') {
+            return res.status(403).json({ success: false, message: 'Access denied: Doctors only' });
+        }
+
+        const doctorId = req.user.id;
+
+        // Fetch appointments where doctorId matches the logged-in doctor
+        const appointments = await Appointment.find({ doctorId })
+            .populate('userId', 'name email profileImage') // Populate patient details
+            .sort({ date: 1, time: 1 }); // Sort by upcoming first
+
+        res.status(200).json({ success: true, data: appointments });
+    } catch (error) {
+        console.error('Error fetching doctor appointments:', error);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };

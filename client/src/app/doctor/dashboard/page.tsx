@@ -6,13 +6,14 @@ import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import axios from 'axios';
-import { FaUserMd, FaClipboardList, FaCheck, FaTimes, FaStethoscope, FaUsers, FaVideo } from 'react-icons/fa';
+import { FaUserMd, FaClipboardList, FaCheck, FaTimes, FaStethoscope, FaUsers, FaVideo, FaCalendarCheck } from 'react-icons/fa';
 
 export default function DoctorDashboard() {
     const { user, token } = useSelector((state: RootState) => state.auth);
     const router = useRouter();
     const [pendingReviews, setPendingReviews] = useState<any[]>([]);
     const [upcomingMeetings, setUpcomingMeetings] = useState<any[]>([]);
+    const [appointments, setAppointments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedConsultation, setSelectedConsultation] = useState<any>(null);
     const [doctorNotes, setDoctorNotes] = useState("");
@@ -29,31 +30,43 @@ export default function DoctorDashboard() {
         if (user && user.type !== 'doctor' && user.type !== 'admin') {
             router.push('/dashboard');
         } else {
-            fetchPendingReviews();
+            fetchDashboardData();
         }
     }, [user, router]);
 
-    const fetchPendingReviews = async () => {
+    const fetchDashboardData = async () => {
         try {
             setLoading(true);
-            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/consultation/pending-reviews`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setPendingReviews(res.data.data);
+            const headers = { Authorization: `Bearer ${token}` };
 
-            try {
-                const meetingsRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/meetings/upcoming`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setUpcomingMeetings(meetingsRes.data.data);
-            } catch (err) { console.log(err); }
+            // Parallel fetching
+            const [reviewsRes, meetingsRes, appointmentsRes] = await Promise.allSettled([
+                axios.get(`${process.env.NEXT_PUBLIC_API_URL}/consultation/pending-reviews`, { headers }),
+                axios.get(`${process.env.NEXT_PUBLIC_API_URL}/meetings/upcoming`, { headers }),
+                axios.get(`${process.env.NEXT_PUBLIC_API_URL}/appointments/doctor-appointments`, { headers })
+            ]);
+
+            if (reviewsRes.status === 'fulfilled') setPendingReviews(reviewsRes.value.data.data);
+            if (meetingsRes.status === 'fulfilled') setUpcomingMeetings(meetingsRes.value.data.data);
+            if (appointmentsRes.status === 'fulfilled') setAppointments(appointmentsRes.value.data.data);
 
         } catch (error) {
-            console.error("Error fetching reviews", error);
+            console.error("Error fetching dashboard data", error);
         } finally {
             setLoading(false);
         }
     };
+
+    const getFilteredAppointments = (dateOffset: number) => {
+        const targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() + dateOffset);
+        const dateString = targetDate.toISOString().split('T')[0];
+
+        return appointments.filter(app => app.date === dateString);
+    };
+
+    const todayAppointments = getFilteredAppointments(0);
+    const tomorrowAppointments = getFilteredAppointments(1);
 
     const handleOpenReview = (consultation: any) => {
         setSelectedConsultation(consultation);
@@ -72,7 +85,7 @@ export default function DoctorDashboard() {
             );
             alert("Review submitted successfully!");
             setSelectedConsultation(null);
-            fetchPendingReviews();
+            fetchDashboardData();
         } catch (error) {
             console.error("Error submitting review", error);
             alert("Failed to submit review.");
@@ -116,6 +129,114 @@ export default function DoctorDashboard() {
                         </div>
                     </div>
 
+                    {/* Appointments Schedule Section */}
+                    <div className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Today's Schedule */}
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <span className="bg-emerald-100 text-emerald-600 p-2 rounded-lg"><FaClipboardList /></span>
+                                Today's Schedule
+                                <span className="ml-auto text-sm font-normal text-gray-500">{new Date().toLocaleDateString()}</span>
+                            </h3>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="text-gray-400 text-xs uppercase border-b border-gray-100">
+                                            <th className="py-3 font-semibold">Time</th>
+                                            <th className="py-3 font-semibold">Patient</th>
+                                            <th className="py-3 font-semibold">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-sm">
+                                        {todayAppointments.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={3} className="py-6 text-center text-gray-400 italic">No appointments for today.</td>
+                                            </tr>
+                                        ) : (
+                                            todayAppointments.map((app) => (
+                                                <tr key={app._id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
+                                                    <td className="py-3 font-bold text-gray-700">{app.time}</td>
+                                                    <td className="py-3">
+                                                        <div className="flex items-center gap-2">
+                                                            {app.userId.profileImage ? (
+                                                                <img src={app.userId.profileImage} alt="" className="w-6 h-6 rounded-full object-cover" />
+                                                            ) : (
+                                                                <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">{app.userId.name?.[0]}</div>
+                                                            )}
+                                                            <span className="font-medium text-gray-800">{app.userId.name}</span>
+                                                        </div>
+                                                        <div className="text-xs text-gray-400 mt-0.5">{app.type} • {app.mode}</div>
+                                                    </td>
+                                                    <td className="py-3">
+                                                        <span className={`px-2 py-1 rounded-full text-xs font-bold 
+                                                            ${app.status === 'Completed' ? 'bg-green-100 text-green-600' :
+                                                                app.status === 'Cancelled' ? 'bg-red-100 text-red-600' :
+                                                                    'bg-blue-100 text-blue-600'}`}>
+                                                            {app.status || 'Scheduled'}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* Tomorrow's Schedule */}
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 opacity-90">
+                            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <span className="bg-blue-100 text-blue-600 p-2 rounded-lg"><FaCalendarCheck /></span>
+                                Tomorrow's Schedule
+                                <span className="ml-auto text-sm font-normal text-gray-500">
+                                    {new Date(new Date().setDate(new Date().getDate() + 1)).toLocaleDateString()}
+                                </span>
+                            </h3>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="text-gray-400 text-xs uppercase border-b border-gray-100">
+                                            <th className="py-3 font-semibold">Time</th>
+                                            <th className="py-3 font-semibold">Patient</th>
+                                            <th className="py-3 font-semibold">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-sm">
+                                        {tomorrowAppointments.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={3} className="py-6 text-center text-gray-400 italic">No appointments for tomorrow.</td>
+                                            </tr>
+                                        ) : (
+                                            tomorrowAppointments.map((app) => (
+                                                <tr key={app._id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
+                                                    <td className="py-3 font-bold text-gray-700">{app.time}</td>
+                                                    <td className="py-3">
+                                                        <div className="flex items-center gap-2">
+                                                            {app.userId.profileImage ? (
+                                                                <img src={app.userId.profileImage} alt="" className="w-6 h-6 rounded-full object-cover" />
+                                                            ) : (
+                                                                <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">{app.userId.name?.[0]}</div>
+                                                            )}
+                                                            <span className="font-medium text-gray-800">{app.userId.name}</span>
+                                                        </div>
+                                                        <div className="text-xs text-gray-400 mt-0.5">{app.type} • {app.mode}</div>
+                                                    </td>
+                                                    <td className="py-3">
+                                                        <span className={`px-2 py-1 rounded-full text-xs font-bold 
+                                                            ${app.status === 'Completed' ? 'bg-green-100 text-green-600' :
+                                                                app.status === 'Cancelled' ? 'bg-red-100 text-red-600' :
+                                                                    'bg-blue-100 text-blue-600'}`}>
+                                                            {app.status || 'Scheduled'}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* List of Pending Reviews */}
                         <div className="lg:col-span-1 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden h-fit">
