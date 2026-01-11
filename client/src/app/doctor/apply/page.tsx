@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FaUpload, FaUserMd, FaidCard, FaStethoscope, FaSpinner } from "react-icons/fa";
+import { FaUpload, FaUserMd, FaIdCard, FaStethoscope, FaSpinner } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import axios from "axios";
 
